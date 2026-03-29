@@ -3,155 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DLS Premier League</title>
+    <title>DLS Premier League | Official</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
-        body { font-family: 'Poppins', sans-serif; background-color: #f4f4f4; }
+        body { font-family: 'Outfit', sans-serif; background-color: #f6f6f6; color: #3d195b; }
         .epl-purple { background-color: #3d195b; }
         .epl-green { background-color: #00ff85; }
-        .epl-text-purple { color: #3d195b; }
-        .nav-active { border-top: 4px solid #00ff85; color: #00ff85 !important; }
-        .glass-card { background: rgba(255, 255, 255, 0.9); border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .text-epl-green { color: #00ff85; }
+        .bg-epl-gradient { background: linear-gradient(135deg, #3d195b 0%, #762291 100%); }
+        .table-header { background-color: #f1f1f1; border-bottom: 1px solid #e2e2e2; }
+        .nav-active { border-top: 4px solid #00ff85; color: #00ff85 !important; background: rgba(0, 255, 133, 0.05); }
+        .dls-font { font-family: 'Arial Black', sans-serif; font-style: italic; letter-spacing: -1px; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="pb-24" x-data="{ page: 'home', isAdmin: false, user: null }">
+<body x-data="leagueApp()" x-init="init()" class="pb-28">
 
-    <header class="epl-purple text-white p-6 shadow-lg flex items-center justify-between sticky top-0 z-50">
-        <div class="flex items-center space-x-3">
-            <img src="https://www.premierleague.com/resources/rebrand/v7.131.1/i/elements/pl-main-logo.png" alt="EPL Logo" class="w-10">
-            <h1 class="text-xl font-extrabold tracking-tighter">DLS PREMIER LEAGUE</h1>
-        </div>
-        <template x-if="!user">
-            <button @click="page = 'auth'" class="bg-white text-purple-900 px-4 py-1 rounded-full text-sm font-bold">Login</button>
-        </template>
-        <template x-if="user">
-            <div class="flex items-center space-x-2">
-                <span class="text-xs" x-text="user.email"></span>
-                <button @click="logout()" class="text-xs underline">Logout</button>
+    <header class="epl-purple text-white shadow-2xl sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <img src="https://www.premierleague.com/resources/rebrand/v7.131.1/i/elements/pl-main-logo.png" alt="EPL" class="w-10">
+                <div class="leading-none">
+                    <span class="dls-font text-epl-green text-xl font-black">DLS</span>
+                    <span class="block text-[10px] tracking-[0.2em] font-bold opacity-80 uppercase">Premier League</span>
+                </div>
             </div>
-        </template>
+            <button @click="user ? logout() : showAuth = true" class="text-xs font-bold uppercase tracking-wider bg-white/10 px-3 py-1 rounded-full">
+                <span x-text="user ? 'Log Out' : 'Player Login'"></span>
+            </button>
+        </div>
     </header>
 
-    <main class="max-w-md mx-auto p-4">
+    <main class="max-w-4xl mx-auto p-4 mt-2">
 
-        <section x-show="page === 'home'" x-transition>
-            <h2 class="text-2xl font-black epl-text-purple mb-4">Table Standings</h2>
-            <div class="glass-card overflow-hidden">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-gray-100 text-left text-xs uppercase text-gray-500">
-                            <th class="p-3">Pos</th>
-                            <th class="p-3">Club</th>
-                            <th class="p-3">Pl</th>
-                            <th class="p-3">GD</th>
-                            <th class="p-3">Pts</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        <tr class="hover:bg-green-50">
-                            <td class="p-3 font-bold">1</td>
-                            <td class="p-3 flex items-center space-x-2">
-                                <div class="w-6 h-6 bg-blue-500 rounded-full"></div> <span class="font-bold">Kampala XI</span>
-                            </td>
-                            <td class="p-3">12</td>
-                            <td class="p-3">+15</td>
-                            <td class="p-3 font-extrabold text-purple-900">36</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div x-show="view === 'home'" x-cloak x-transition>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-2xl font-black italic uppercase">League Table</h2>
+                <span class="text-[10px] bg-gray-200 px-2 py-1 rounded font-bold uppercase">Season 2026</span>
             </div>
-        </section>
-
-        <section x-show="page === 'fixtures'" x-transition>
-            <h2 class="text-2xl font-black epl-text-purple mb-4">Fixtures</h2>
-            <div class="space-y-3">
-                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-800 flex justify-between items-center">
-                    <span class="text-xs font-bold w-1/3">ENT EBB</span>
-                    <div class="bg-gray-100 px-3 py-1 rounded font-mono font-bold text-purple-800">18:00</div>
-                    <span class="text-xs font-bold w-1/3 text-right">KLA CITY</span>
+            
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="table-header text-gray-500 font-bold text-[11px] uppercase">
+                            <tr>
+                                <th class="p-4 text-center">Pos</th>
+                                <th class="p-4 text-left">Club</th>
+                                <th class="p-4">MP</th>
+                                <th class="p-4">W</th>
+                                <th class="p-4">D</th>
+                                <th class="p-4">L</th>
+                                <th class="p-4 hidden md:table-cell">GS</th>
+                                <th class="p-4 hidden md:table-cell">GA</th>
+                                <th class="p-4">GD</th>
+                                <th class="p-4 bg-gray-50 text-purple-900 font-black">Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <template x-for="(team, index) in standings" :key="index">
+                                <tr class="hover:bg-green-50 transition-colors">
+                                    <td class="p-4 text-center font-bold" :class="index < 4 ? 'border-l-4 border-blue-500' : ''" x-text="index + 1"></td>
+                                    <td class="p-4">
+                                        <div class="flex items-center space-x-3">
+                                            <img :src="team.logo" class="w-6 h-6 object-contain" alt="Logo">
+                                            <span class="font-black text-purple-900 whitespace-nowrap" x-text="team.name"></span>
+                                        </div>
+                                    </td>
+                                    <td class="p-4 text-center" x-text="team.played"></td>
+                                    <td class="p-4 text-center" x-text="team.won"></td>
+                                    <td class="p-4 text-center" x-text="team.drawn"></td>
+                                    <td class="p-4 text-center" x-text="team.lost"></td>
+                                    <td class="p-4 text-center hidden md:table-cell" x-text="team.gs"></td>
+                                    <td class="p-4 text-center hidden md:table-cell" x-text="team.ga"></td>
+                                    <td class="p-4 text-center font-medium" x-text="team.gs - team.ga"></td>
+                                    <td class="p-4 text-center font-black bg-gray-50 text-purple-900" x-text="(team.won * 3) + team.drawn"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <section x-show="page === 'results'" x-transition>
-            <h2 class="text-2xl font-black epl-text-purple mb-4">Latest Results</h2>
-            <div class="glass-card p-4 space-y-4">
-                <div class="flex justify-between items-center border-b pb-2">
-                    <span class="text-sm font-bold">Lions FC</span>
-                    <span class="bg-purple-900 text-white px-4 py-1 rounded font-bold">3 - 1</span>
-                    <span class="text-sm font-bold">Stars XI</span>
+        <div x-show="view === 'fixtures'" x-cloak x-transition>
+            <h2 class="text-2xl font-black italic uppercase mb-4 text-purple-900">Upcoming Fixtures</h2>
+            <div class="space-y-4">
+                <template x-for="match in fixtures">
+                    <div class="bg-white p-6 rounded-2xl shadow-md flex items-center justify-between border-t-4 border-purple-800">
+                        <div class="flex flex-col items-center w-1/3">
+                            <img :src="match.home_logo" class="w-10 h-10 mb-2">
+                            <span class="font-bold text-[10px] uppercase text-center" x-text="match.home_name"></span>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-epl-gradient text-white px-4 py-1 rounded text-sm font-black mb-1" x-text="match.time"></div>
+                            <div class="text-[9px] font-bold text-gray-400 uppercase tracking-widest" x-text="match.date"></div>
+                        </div>
+                        <div class="flex flex-col items-center w-1/3">
+                            <img :src="match.away_logo" class="w-10 h-10 mb-2">
+                            <span class="font-bold text-[10px] uppercase text-center" x-text="match.away_name"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div x-show="view === 'results'" x-cloak x-transition>
+            <h2 class="text-2xl font-black italic uppercase mb-4 text-purple-900">Match Results</h2>
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <template x-for="res in results">
+                    <div class="flex items-center justify-between p-4 border-b hover:bg-gray-50">
+                        <span class="w-1/3 font-bold text-sm" x-text="res.home_name"></span>
+                        <div class="flex space-x-1">
+                            <span class="bg-purple-900 text-white w-8 h-8 flex items-center justify-center rounded font-bold" x-text="res.h_score"></span>
+                            <span class="bg-purple-900 text-white w-8 h-8 flex items-center justify-center rounded font-bold" x-text="res.a_score"></span>
+                        </div>
+                        <span class="w-1/3 text-right font-bold text-sm" x-text="res.away_name"></span>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div x-show="showAdmin" class="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[100]" x-cloak>
+            <div class="bg-white rounded-3xl w-full max-w-md p-8">
+                <h3 class="text-2xl font-black mb-4">Admin Control</h3>
+                <div class="space-y-4">
+                    <input type="text" placeholder="Admin Passcode" class="w-full p-4 border rounded-xl outline-none focus:ring-2 ring-purple-500">
+                    <button @click="showAdmin = false" class="w-full epl-purple text-white p-4 rounded-xl font-bold">Access Panel</button>
+                    <button @click="showAdmin = false" class="w-full text-gray-400 text-sm">Cancel</button>
                 </div>
             </div>
-        </section>
-
-        <section x-show="page === 'insights'" x-transition>
-            <h2 class="text-2xl font-black epl-text-purple mb-4">Insights</h2>
-            <div class="bg-gradient-to-br from-purple-900 to-indigo-900 text-white p-6 rounded-2xl">
-                <p class="text-sm opacity-80 uppercase tracking-widest font-bold">Top Scorer</p>
-                <h3 class="text-3xl font-black mt-1">Brian "The King"</h3>
-                <p class="text-green-400 font-bold mt-2">14 Goals in 10 Matches</p>
-            </div>
-        </section>
-
-        <section x-show="page === 'admin'" x-transition>
-            <h2 class="text-2xl font-black text-red-600 mb-4">Admin Management</h2>
-            <form class="space-y-4 bg-white p-4 rounded-xl shadow">
-                <input type="text" placeholder="Home Team" class="w-full p-2 border rounded">
-                <input type="text" placeholder="Away Team" class="w-full p-2 border rounded">
-                <div class="flex space-x-2">
-                    <input type="number" placeholder="H Score" class="w-1/2 p-2 border rounded">
-                    <input type="number" placeholder="A Score" class="w-1/2 p-2 border rounded">
-                </div>
-                <button class="w-full epl-purple text-white p-3 rounded-lg font-bold">Update League</button>
-            </form>
-        </section>
+        </div>
 
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-3 z-50">
-        <button @click="page = 'home'" :class="page === 'home' ? 'nav-active' : ''" class="flex flex-col items-center text-gray-400 transition-all">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            <span class="text-[10px] font-bold mt-1 uppercase">Home</span>
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-2 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-50">
+        <button @click="view = 'home'" :class="view === 'home' ? 'nav-active' : ''" class="flex flex-col items-center p-2 rounded-xl text-gray-400 w-full transition-all">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            <span class="text-[9px] font-black uppercase mt-1">Table</span>
         </button>
-        <button @click="page = 'fixtures'" :class="page === 'fixtures' ? 'nav-active' : ''" class="flex flex-col items-center text-gray-400">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            <span class="text-[10px] font-bold mt-1 uppercase">Fixtures</span>
+        <button @click="view = 'fixtures'" :class="view === 'fixtures' ? 'nav-active' : ''" class="flex flex-col items-center p-2 rounded-xl text-gray-400 w-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span class="text-[9px] font-black uppercase mt-1">Fixtures</span>
         </button>
-        <button @click="page = 'results'" :class="page === 'results' ? 'nav-active' : ''" class="flex flex-col items-center text-gray-400">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span class="text-[10px] font-bold mt-1 uppercase">Results</span>
+        <button @click="view = 'results'" :class="view === 'results' ? 'nav-active' : ''" class="flex flex-col items-center p-2 rounded-xl text-gray-400 w-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[9px] font-black uppercase mt-1">Results</span>
         </button>
-        <button @click="page = 'insights'" :class="page === 'insights' ? 'nav-active' : ''" class="flex flex-col items-center text-gray-400">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-            <span class="text-[10px] font-bold mt-1 uppercase">Stats</span>
-        </button>
-        <button @click="page = 'admin'" :class="page === 'admin' ? 'nav-active text-red-600' : ''" class="flex flex-col items-center text-gray-400">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-            <span class="text-[10px] font-bold mt-1 uppercase">Admin</span>
+        <button @click="handleAdminClick" :class="view === 'insights' ? 'nav-active' : ''" class="flex flex-col items-center p-2 rounded-xl text-gray-400 w-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            <span class="text-[9px] font-black uppercase mt-1" x-text="isAdmin ? 'Admin' : 'Stats'"></span>
         </button>
     </nav>
 
     <script>
-        // REPLACE WITH YOUR ACTUAL KEYS FROM SUPABASE
-        const supabaseUrl = 'https://your-project.supabase.co';
-        const supabaseKey = 'your-anon-key';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        // Supabase Configuration
+        const _supabase = supabase.createClient('https://your-project-id.supabase.co', 'your-anon-key');
 
-        // Auth Logic for Player Login
-        async function login() {
-            // Simplified: Redirect to Supabase Auth UI or handle Magic Link
-            alert('Supabase Auth is required to use this feature.');
-        }
+        function leagueApp() {
+            return {
+                view: 'home',
+                showAdmin: false,
+                isAdmin: false,
+                user: null,
+                standings: [
+                    { name: 'KAMPALA KINGS', logo: 'https://cdn-icons-png.flaticon.com/512/824/824726.png', played: 10, won: 8, drawn: 1, lost: 1, gs: 25, ga: 5 },
+                    { name: 'ENTEBBE EAGLES', logo: 'https://cdn-icons-png.flaticon.com/512/824/824742.png', played: 10, won: 6, drawn: 2, lost: 2, gs: 18, ga: 10 }
+                ],
+                fixtures: [
+                    { home_name: 'LIONS FC', home_logo: 'https://cdn-icons-png.flaticon.com/512/824/824733.png', away_name: 'CITY STARS', away_logo: 'https://cdn-icons-png.flaticon.com/512/824/824738.png', time: '20:00', date: 'SUN 29 MAR' }
+                ],
+                results: [
+                    { home_name: 'KAMPALA KINGS', away_name: 'ENTEBBE EAGLES', h_score: 3, a_score: 0 }
+                ],
 
-        async function logout() {
-            await supabase.auth.signOut();
-            window.location.reload();
+                async init() {
+                    // Fetch real data from Supabase here
+                    // this.standings = await ...
+                },
+
+                handleAdminClick() {
+                    // To access admin: Click 5 times rapidly or hold. For now, simple toggle
+                    this.view = 'insights';
+                    let clickCount = 0;
+                    // Logic to show admin can be added here
+                },
+
+                async logout() {
+                    await _supabase.auth.signOut();
+                    location.reload();
+                }
+            }
         }
     </script>
 </body>
 </html>
-
