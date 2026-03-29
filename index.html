@@ -163,7 +163,8 @@
                 </div>
                 <div class="space-y-3">
                     <template x-for="match in fixtures" :key="match.id">
-                        <div @click="selectedMatch = match; view = 'admin'; form.h_score=0; form.a_score=0;" 
+                        <div @click="if(isAdmin) { selectedMatch = match; view = 'admin'; form.h_score=0; form.a_score=0; }"
+ 
                              class="glass-card p-4 rounded-xl flex items-center justify-between border-l-4 cursor-pointer hover:border-[#00ff85] transition-all" 
                              :class="match.match_date === '1st Leg' ? 'border-l-[#00ff85]' : 'border-l-blue-400'">
                             <div class="flex items-center space-x-2 w-1/3">
