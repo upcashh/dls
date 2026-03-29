@@ -80,11 +80,11 @@
                     for (let i = 0; i < shuffled.length; i += 2) {
                         if (shuffled[i + 1]) {
                             pairs.push({
-                                home_name: shuffled[i].team_name,
+                                home_team: shuffled[i].team_name,
                                 home_logo: shuffled[i].logo_url,
-                                away_name: shuffled[i + 1].team_name,
+                                away_team: shuffled[i + 1].team_name,
                                 away_logo: shuffled[i + 1].logo_url,
-                                time: "20:00" // Default time
+                                match_date: "20:00" // Default time
                             });
                         }
                     }
