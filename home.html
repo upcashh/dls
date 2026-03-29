@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DLS Premier League</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f4f4; }
+        .epl-purple { background-color: #3d195b; }
+        .epl-green { background-color: #00ff85; }
+        .epl-text-purple { color: #3d195b; }
+        .nav-active { border-top: 4px solid #00ff85; color: #00ff85 !important; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body class="pb-24" x-data="{ page: 'home', isAdmin: false, user: null }">
+
+    <header class="epl-purple text-white p-6 shadow-lg flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center space-x-3">
+            <img src="https://www.premierleague.com/resources/rebrand/v7.131.1/i/elements/pl-main-logo.png" alt="EPL Logo" class="w-10">
+            <h1 class="text-xl font-extrabold tracking-tighter">DLS PREMIER LEAGUE</h1>
+        </div>
+        <template x-if="!user">
+            <button @click="page = 'auth'" class="bg-white text-purple-900 px-4 py-1 rounded-full text-sm font-bold">Login</button>
+        </template>
+        <template x-if="user">
+            <div class="flex items-center space-x-2">
+                <span class="text-xs" x-text="user.email"></span>
+                <button @click="logout()" class="text-xs underline">Logout</button>
+            </div>
+        </template>
+    </header>
+
+    <main class="max-w-md mx-auto p-4">
+
+        <section x-show="page === 'home'" x-transition>
+            <h2 class="text-2xl font-black epl-text-purple mb-4">Table Standings</h2>
+            <div class="glass-card overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-100 text-left text-xs uppercase text-gray-500">
+                            <th class="p-3">Pos</th>
+                            <th class="p-3">Club</th>
+                            <th class="p-3">Pl</th>
+                            <th class="p-3">GD</th>
+                            <th class="p-3">Pts</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr class="hover:bg-green-50">
+                            <td class="p-3 font-bold">1</td>
+                            <td class="p-3 flex items-center space-x-2">
+                                <div class="w-6 h-6 bg-blue-500 rounded-full"></div> <span class="font-bold">Kampala XI</span>
+                            </td>
+                            <td class="p-3">12</td>
+                            <td class="p-3">+15</td>
+                            <td class="p-3 font-extrabold text-purple-900">36</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section x-show="page === 'fixtures'" x-transition>
+            <h2 class="text-2xl font-black epl-text-purple mb-4">Fixtures</h2>
+            <div class="space-y-3">
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-800 flex justify-between items-center">
+                    <span class="text-xs font-bold w-1/3">ENT EBB</span>
+                    <div class="bg-gray-100 px-3 py-1 rounded font-mono font-bold text-purple-800">18:00</div>
+                    <span class="text-xs font-bold w-1/3 text-right">KLA CITY</span>
+                </div>
+            </div>
+        </section>
+
+        <section x-show="page === 'results'" x-transition>
+            <h2 class="text-2xl font-black epl-text-purple mb-4">Latest Results</h2>
+            <div class="glass-card p-4 space-y-4">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="text-sm font-bold">Lions FC</span>
+                    <span class="bg-purple-900 text-white px-4 py-1 rounded font-bold">3 - 1</span>
+                    <span class="text-sm font-bold">Stars XI</span>
+                </div>
+            </div>
+        </section>
+
+        <section x-show="page === 'insights'" x-transition>
+            <h2 class="text-2xl font-black epl-text-purple mb-4">Insights</h2>
+            <div class="bg-gradient-to-br from-purple-900 to-indigo-900 text-white p-6 rounded-2xl">
+                <p class="text-sm opacity-80 uppercase tracking-widest font-bold">Top Scorer</p>
+                <h3 class="text-3xl font-black mt-1">Brian "The King"</h3>
+                <p class="text-green-400 font-bold mt-2">14 Goals in 10 Matches</p>
+            </div>
+        </section>
+
+        <section x-show="page === 'admin'" x-transition>
+            <h2 class="text-2xl font-black text-red-600 mb-4">Admin Management</h2>
+            <form class="space-y-4 bg-white p-4 rounded-xl shadow">
+                <input type="text" placeholder="Home Team" class="w-full p-2 border rounded">
+                <input type="text" placeholder="Away Team" class="w-full p-2 border rounded">
+                <div class="flex space-x-2">
+                    <input type="number" placeholder="H Score" class="w-1/2 p-2 border rounded">
+                    <input type="number" placeholder="A Score" class="w-1/2 p-2 border rounded">
+                </div>
+                <button class="w-full epl-purple text-white p-3 rounded-lg font-bold">Update League</button>
+            </form>
+        </section>
+
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-3 z-50">
+        <button @click="page = 'home'" :class="page === 'home' ? 'nav-active' : ''" class="flex flex-col items-center text-gray-400 transition-all">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span class="text-[10px] font-bold mt-1 uppercase">Home</span>
+        </button>
+        <button @click="page = 'fixtures'" :class="page === 'fixtures' ? 'nav-active' : ''" class="flex flex-col items-center text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span class="text-[10px] font-bold mt-1 uppercase">Fixtures</span>
+        </button>
+        <button @click="page = 'results'" :class="page === 'results' ? 'nav-active' : ''" class="flex flex-col items-center text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[10px] font-bold mt-1 uppercase">Results</span>
+        </button>
+        <button @click="page = 'insights'" :class="page === 'insights' ? 'nav-active' : ''" class="flex flex-col items-center text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            <span class="text-[10px] font-bold mt-1 uppercase">Stats</span>
+        </button>
+        <button @click="page = 'admin'" :class="page === 'admin' ? 'nav-active text-red-600' : ''" class="flex flex-col items-center text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <span class="text-[10px] font-bold mt-1 uppercase">Admin</span>
+        </button>
+    </nav>
+
+    <script>
+        // REPLACE WITH YOUR ACTUAL KEYS FROM SUPABASE
+        const supabaseUrl = 'https://your-project.supabase.co';
+        const supabaseKey = 'your-anon-key';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Auth Logic for Player Login
+        async function login() {
+            // Simplified: Redirect to Supabase Auth UI or handle Magic Link
+            alert('Supabase Auth is required to use this feature.');
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>
+
