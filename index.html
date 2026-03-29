@@ -78,8 +78,10 @@
                         
                         <div class="w-full grid grid-cols-3 gap-4 border-t border-white/5 pt-6">
                             <div>
-    <p class="text-[10px] text-white/30 uppercase font-black">Teams</p>
-    <p class="text-lg font-bold outfit" x-text="activeLeague.total_slots || 0"></p>
+    <p class="text-lg font-bold outfit">
+    <span x-text="standings.length"></span>/<span x-text="activeLeague.total_slots"></span>
+</p>
+
 </div>
 
                             <div>
