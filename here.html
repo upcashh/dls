@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0f1a">
+    <title>DLS26 | Command Center</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { background-color: #0a0f1a; font-family: 'DM Sans', sans-serif; color: white; overflow-x: hidden; }
+        .outfit { font-family: 'Outfit', sans-serif; }
+        
+        .glass-card { 
+            background: linear-gradient(160deg, #111827 0%, #0d1321 100%); 
+            border: 1px solid rgba(0, 255, 133, 0.15);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .nav-active { color: #00ff85 !important; background: rgba(0, 255, 133, 0.08); border-top: 2px solid #00ff85; }
+        [x-cloak] { display: none !important; }
+
+        /* Custom scrollbar for matchday list */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body x-data="leagueApp()" x-init="init()" class="pb-24">
+
+    <header class="bg-[#0a0f1a] border-b border-[#00ff8526] sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <template x-if="view !== 'lobby'">
+                    <button @click="view = 'lobby'" class="mr-2 text-white/40 hover:text-[#00ff85]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                </template>
+                <div class="leading-none">
+                    <span class="outfit text-white text-xl font-900 tracking-tighter uppercase">DLS<span class="text-[#00ff85]">26</span></span>
+                    <span class="block text-[8px] tracking-[0.3em] font-bold text-[#00ff85] opacity-80 uppercase" x-text="view === 'lobby' ? 'Network Lobby' : 'Active Sector'"></span>
+                </div>
+            </div>
+            
+            <button @click="logout()" class="p-2 bg-red-500/10 rounded-lg text-red-500 border border-red-500/20">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4 pt-8">
+
+        <div x-show="view === 'lobby'" x-transition x-cloak>
+            <h2 class="outfit font-900 text-2xl uppercase tracking-tighter mb-6 px-1 text-center">Available <span class="text-[#00ff85]">Deployment</span></h2>
+            
+            <template x-if="activeLeague">
+                <div @click="activeLeague.status === 'active' ? (view = 'home', fetchFixtures()) : null" 
+                     class="glass-card rounded-3xl p-8 relative overflow-hidden group transition-all duration-500"
+                     :class="activeLeague.status === 'active' ? 'cursor-pointer hover:border-[#00ff85]' : 'opacity-60 grayscale border-gray-800'">
+                    
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-[#00ff85] opacity-10 blur-3xl group-hover:opacity-20 transition-opacity"></div>
+                    
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-20 h-20 bg-[#00ff851a] rounded-2xl flex items-center justify-center mb-6 border border-[#00ff8533]">
+                            <img src="https://www.premierleague.com/resources/rebrand/v7.131.1/i/elements/pl-main-logo.png" class="w-12 h-12">
+                        </div>
+                        
+                        <h3 class="outfit font-900 text-3xl uppercase tracking-tight mb-2">
+                            <span x-text="activeLeague.name"></span> <span class="text-[#00ff85]" x-text="activeLeague.season_number"></span>
+                        </h3>
+                        
+                        <div class="flex items-center space-x-3 mb-6">
+                            <span :class="activeLeague.status === 'active' ? 'bg-[#00ff85] text-[#0a0f1a]' : 'bg-red-500 text-white'" 
+                                  class="text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest" 
+                                  x-text="activeLeague.status === 'active' ? 'ONGOING' : 'COMPLETED'"></span>
+                        </div>
+                        
+                        <div class="w-full grid grid-cols-3 gap-4 border-t border-white/5 pt-6">
+                            <div>
+                                <p class="text-[10px] text-white/30 uppercase font-black">Teams</p>
+                                <p class="text-lg font-bold outfit">
+                                    <span x-text="standings.length"></span>/<span x-text="activeLeague.total_slots"></span>
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-white/30 uppercase font-black">Status</p>
+                                <p class="text-lg font-bold outfit uppercase text-[#00ff85]" x-text="activeLeague.status"></p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-white/30 uppercase font-black">Prize</p>
+                                <p class="text-lg font-bold outfit" x-text="activeLeague.prize_pool || 'GOLD'">GOLD</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <div x-show="view !== 'lobby'" x-transition x-cloak>
+            
+            <div x-show="view === 'home'">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="outfit font-900 text-xl uppercase tracking-tighter">League <span class="text-[#00ff85]">Analytics</span></h2>
+                </div>
+                <div class="glass-card rounded-2xl overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-black/40 border-b border-white/5 text-[#5a6477] font-bold text-[9px] uppercase tracking-widest">
+                            <tr>
+                                <th class="py-4 px-2 text-center">#</th>
+                                <th class="py-4">Club</th>
+                                <th class="py-4 text-center px-2">MP</th>
+                                <th class="py-4 text-center px-2 text-[#00ff85]">PTS</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 text-[11px]">
+                            <template x-for="(team, index) in standings" :key="index">
+                                <tr :class="team.name === userTeam ? 'bg-[#00ff8510]' : ''">
+                                    <td class="py-4 text-center text-white/30" x-text="index + 1"></td>
+                                    <td class="py-4 flex items-center space-x-3">
+                                        <img :src="team.logo" class="w-5 h-5 object-contain" onerror="this.src='https://via.placeholder.com/50'">
+                                        <span class="font-bold uppercase" x-text="team.name"></span>
+                                    </td>
+                                    <td class="text-center text-white/50" x-text="team.played"></td>
+                                    <td class="text-center font-black text-[#00ff85]" x-text="team.points"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div x-show="view === 'fixtures'">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <h2 class="outfit font-900 text-xl uppercase tracking-tighter">Matchday <span class="text-[#00ff85]" x-text="currentMatchday"></span></h2>
+                </div>
+
+                <div class="flex space-x-2 overflow-x-auto no-scrollbar mb-6 py-2">
+                    <template x-for="n in totalMatchdays">
+                        <button @click="currentMatchday = n; fetchFixtures()" 
+                                :class="currentMatchday === n ? 'bg-[#00ff85] text-[#0a0f1a]' : 'bg-white/5 text-white/40'"
+                                class="px-4 py-2 rounded-lg text-[10px] font-black outfit uppercase transition-all flex-shrink-0"
+                                x-text="'MD ' + n">
+                        </button>
+                    </template>
+                </div>
+
+                <div class="space-y-3">
+                    <template x-for="match in fixtures" :key="match.id">
+                        <div class="glass-card p-4 rounded-xl flex items-center justify-between border-l-4" :class="match.match_date === '1st Leg' ? 'border-l-[#00ff85]' : 'border-l-blue-400'">
+                            <div class="flex items-center space-x-2 w-1/3">
+                                <img :src="match.home_logo" class="w-5 h-5 object-contain">
+                                <span class="text-[10px] font-bold uppercase truncate" x-text="match.home_team"></span>
+                            </div>
+                            <div class="bg-black/40 px-3 py-2 rounded border border-white/5 text-center min-w-[70px]">
+                                <span class="text-white/40 text-[8px] block uppercase font-black mb-0.5">Matchday <span x-text="match.matchday"></span></span>
+                                <span class="text-[#00ff85] text-[9px] font-black uppercase tracking-widest" x-text="match.match_date"></span>
+                            </div>
+                            <div class="flex items-center space-x-2 w-1/3 justify-end">
+                                <span class="text-[10px] font-bold uppercase truncate" x-text="match.away_team"></span>
+                                <img :src="match.away_logo" class="w-5 h-5 object-contain">
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="fixtures.length === 0">
+                        <div class="text-center py-10 text-white/20 text-xs font-bold uppercase tracking-widest">No Matches Scheduled for this sector</div>
+                    </template>
+                </div>
+            </div>
+
+            <div x-show="view === 'results'">
+                <h2 class="outfit font-900 text-xl uppercase tracking-tighter mb-4">Historical <span class="text-[#00ff85]">Data</span></h2>
+                <div class="space-y-3">
+                    <template x-for="res in results" :key="res.id">
+                        <div class="glass-card p-4 rounded-xl flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase w-1/3 truncate" x-text="res.home_name"></span>
+                            <div class="flex items-center space-x-2 bg-[#00ff851a] px-3 py-1 rounded border border-[#00ff8533] min-w-[70px] justify-center">
+                                <span class="text-[#00ff85] font-black text-xs" x-text="res.h_score"></span>
+                                <span class="text-white/20 text-[10px]">:</span>
+                                <span class="text-[#00ff85] font-black text-xs" x-text="res.a_score"></span>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase w-1/3 text-right truncate" x-text="res.away_name"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <nav x-show="view !== 'lobby'" class="fixed bottom-0 left-0 right-0 bg-[#0a0f1a] border-t border-white/5 flex justify-around p-2 pb-6 backdrop-blur-lg z-50">
+        <button @click="view = 'home'" :class="view === 'home' ? 'nav-active' : ''" class="flex flex-col items-center p-3 rounded-xl text-white/40 w-full transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            <span class="text-[8px] font-bold uppercase mt-1.5 tracking-widest">Table</span>
+        </button>
+        <button @click="view = 'fixtures'; fetchFixtures()" :class="view === 'fixtures' ? 'nav-active' : ''" class="flex flex-col items-center p-3 rounded-xl text-white/40 w-full transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span class="text-[8px] font-bold uppercase mt-1.5 tracking-widest">My Fixtures</span>
+        </button>
+        <button @click="view = 'results'" :class="view === 'results' ? 'nav-active' : ''" class="flex flex-col items-center p-3 rounded-xl text-white/40 w-full transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[8px] font-bold uppercase mt-1.5 tracking-widest">Results</span>
+        </button>
+    </nav>
+
+    <script>
+        const _supabase = supabase.createClient('https://irzgzyfscoosvixwvfhx.supabase.co', 'sb_publishable_5WjuPG6Wg96_ySp0DcDuTw_JTGWxSJh');
+
+        function leagueApp() {
+            return {
+                view: 'lobby',
+                activeLeague: null,
+                standings: [],
+                fixtures: [],
+                results: [],
+                userTeam: '', // Stored after login check
+                currentMatchday: 1,
+                totalMatchdays: 0,
+                
+                async init() {
+                    const { data: { user } } = await _supabase.auth.getUser();
+                    if (!user) { window.location.href = 'signin.html'; return; }
+
+                    // 1. Fetch User's Team Name (Assumes team is linked to auth email or username)
+                    const { data: userData } = await _supabase.from('standings').select('team_name').eq('user_id', user.id).single();
+                    if (userData) this.userTeam = userData.team_name;
+
+                    // 2. Fetch Active League
+                    const { data: leagueData } = await _supabase.from('leagues').select('*').eq('name', 'Premier League').single();
+                    if (leagueData) this.activeLeague = leagueData;
+
+                    // 3. Load Table
+                    const { data: standData } = await _supabase.from('standings').select('*').order('points', { ascending: false });
+                    if (standData) {
+                        this.standings = standData.map(i => ({ name: i.team_name, logo: i.logo_url, played: i.played, points: i.points }));
+                        // Calculate total matchdays (if 20 teams, then 19 matchdays)
+                        this.totalMatchdays = standData.length % 2 === 0 ? standData.length - 1 : standData.length;
+                    }
+
+                    // 4. Load Results
+                    const { data: resData } = await _supabase.from('results').select('*').order('created_at', { ascending: false });
+                    if (resData) this.results = resData;
+                },
+
+                async fetchFixtures() {
+                    if (!this.activeLeague) return;
+
+                    // Fetch ONLY matches where the logged-in user's team is playing
+                    const { data: fixData } = await _supabase
+                        .from('fixtures')
+                        .select('*')
+                        .eq('league_id', this.activeLeague.id)
+                        .eq('matchday', this.currentMatchday)
+                        .or(`home_team.eq."${this.userTeam}",away_team.eq."${this.userTeam}"`)
+                        .order('match_date', { ascending: true }); // Groups 1st Leg then 2nd Leg
+                    
+                    if (fixData) this.fixtures = fixData;
+                },
+
+                async logout() {
+                    await _supabase.auth.signOut();
+                    window.location.href = 'signin.html';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
