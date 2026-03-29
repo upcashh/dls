@@ -237,12 +237,13 @@
                         }));
                     }
 
-                    // 3. Load Fixtures
-                    const { data: fixData } = await _supabase
-                        .from('fixtures')
-                        .select('*')
-                        .order('created_at', { ascending: true });
-                    if (fixData) this.fixtures = fixData;
+                    // 3. Load Fixtures (Only for the active league)
+const { data: fixData } = await _supabase
+    .from('fixtures')
+    .select('*')
+    .eq('league_id', this.activeLeague.id) // This ensures Round 1 of Season 26 stays in Season 26
+    .order('created_at', { ascending: true });
+if (fixData) this.fixtures = fixData;
 
                     // 4. Load Results
                     const { data: resData } = await _supabase
