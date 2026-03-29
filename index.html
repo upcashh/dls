@@ -257,7 +257,7 @@
         </button>
     </nav>
 
-    <script>
+        <script>
         const _supabase = supabase.createClient('https://irzgzyfscoosvixwvfhx.supabase.co', 'sb_publishable_5WjuPG6Wg96_ySp0DcDuTw_JTGWxSJh');
 
         function leagueApp() {
@@ -273,10 +273,17 @@
                 selectedMatch: null,
                 submitting: false,
                 form: { h_score: 0, a_score: 0 },
-                
+                isAdmin: false,
+                adminId: 'c2185ce2-e803-410a-91a8-ea21aa206b98', // <--- PASTE YOUR ID HERE
+
                 async init() {
                     const { data: { user } } = await _supabase.auth.getUser();
                     if (!user) { window.location.href = 'signin.html'; return; }
+
+                    // Check if logged in user is Admin
+                    if (user.id === this.adminId) {
+                        this.isAdmin = true;
+                    }
 
                     const { data: userData } = await _supabase.from('standings').select('team_name').eq('user_id', user.id).maybeSingle();
                     if (userData) this.userTeam = userData.team_name;
@@ -387,6 +394,7 @@
                 }
             }
         }
-    </script>
+        </script>
 </body>
 </html>
+        
