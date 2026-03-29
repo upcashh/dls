@@ -34,7 +34,6 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* DLS26 Typography Style */
         .dls-brand {
             font-family: 'Arial Black', sans-serif;
             font-weight: 900;
@@ -49,7 +48,7 @@
         .input-wrapper input {
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 0.8rem 1rem 0.8rem 3rem; /* Reduced size */
+            padding: 0.8rem 1rem 0.8rem 3rem;
             width: 100%;
             border-radius: 8px;
             color: white;
@@ -146,10 +145,7 @@
 
             <div class="bg-black/20 p-4 rounded-xl border border-white/5">
                 <span class="bebas text-sm tracking-widest text-olive-green block mb-2">Team Identity</span>
-                <input type="file" @change="onFileChange" accept="image/*" class="w-full text-[10px] text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-olive-green file:text-white cursor-pointer">
-                <p class="text-[9px] text-white/30 mt-2 font-bold uppercase">
-                    Note: Please trim your image to a square ratio for the perfect logo fit.
-                </p>
+                <input type="file" @change="onFileChange" accept="image/*" class="w-full text-[10px] text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-olive-green file:text-white cursor-pointer" required>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -195,7 +191,7 @@
 
     <script>
         const supabaseUrl = 'https://irzgzyfscoosvixwvfhx.supabase.co';
-        const supabaseKey = 'sb_publishable_5WjuPG6Wg96_ySp0DcDuTw_JTGWxSJh';
+        const supabaseKey = 'YOUR_ACTUAL_ANON_KEY'; // Replace with your real anon key
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         function registerApp() {
@@ -216,7 +212,7 @@
                         this.usernameMsg = "Min 4 lowercase.";
                         return;
                     }
-
+                    this.usernameMsg = "Checking...";
                     clearTimeout(this.timer);
                     this.timer = setTimeout(async () => {
                         const { data } = await _supabase
@@ -245,14 +241,50 @@
                         this.formData.phone.length === 10 &&
                         this.formData.password.length >= 8 &&
                         this.formData.password === this.formData.confirmPassword &&
-                        this.logo
+                        this.logo !== null
                     );
                 },
 
                 async handleSignUp() {
+                    if (!this.canSubmit) return;
                     this.loading = true;
-                    // ... (Supabase logic remains identical)
-                    this.loading = false;
+
+                    try {
+                        // 1. Auth Sign Up
+                        const { data: authData, error: authError } = await _supabase.auth.signUp({
+                            email: this.formData.email,
+                            password: this.formData.password
+                        });
+                        if (authError) throw authError;
+
+                        // 2. Upload Logo
+                        const fileExt = this.logo.name.split('.').pop();
+                        const fileName = `${this.formData.username}-${Date.now()}.${fileExt}`;
+                        const { error: uploadError } = await _supabase.storage
+                            .from('logos') 
+                            .upload(fileName, this.logo);
+                        if (uploadError) throw uploadError;
+
+                        const logoUrl = `${supabaseUrl}/storage/v1/object/public/logos/${fileName}`;
+
+                        // 3. Insert Database Record
+                        const { error: dbError } = await _supabase.from('userinfo').insert([{
+                            username: this.formData.username,
+                            team_name: this.formData.teamName,
+                            email: this.formData.email,
+                            phone: this.formData.phone,
+                            logo_url: logoUrl
+                        }]);
+                        if (dbError) throw dbError;
+
+                        alert("Registration Successful!");
+                        window.location.href = 'signin.html';
+
+                    } catch (err) {
+                        alert(err.message);
+                    } finally {
+                        this.loading = false;
+                    }
                 }
             }
         }
