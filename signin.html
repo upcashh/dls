@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0f1a">
+    <title>DLS26 | Sign In</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { background-color: #0a0f1a; font-family: 'DM Sans', sans-serif; color: white; overflow: hidden; }
+        .outfit { font-family: 'Outfit', sans-serif; }
+        
+        .glass-card { 
+            background: linear-gradient(160deg, #111827 0%, #0d1321 100%); 
+            border: 1px solid rgba(0, 255, 133, 0.15);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: #00ff85;
+            background: rgba(0, 255, 133, 0.05);
+            outline: none;
+        }
+    </style>
+</head>
+<body x-data="authApp()" class="h-full flex flex-col">
+
+    <header class="bg-[#0a0f1a] border-b border-[#00ff8526] py-6">
+        <div class="max-w-4xl mx-auto px-6 flex justify-center">
+            <div class="leading-none text-center">
+                <span class="outfit text-white text-3xl font-900 tracking-tighter uppercase">DLS<span class="text-[#00ff85]">26</span></span>
+                <span class="block text-[10px] tracking-[0.4em] font-bold text-[#00ff85] opacity-80 uppercase mt-1">Advanced Football Network</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center p-6">
+        <div class="w-full max-w-md transition-all" x-show="!loading" x-transition:enter="duration-500">
+            
+            <div class="text-center mb-8">
+                <h1 class="outfit font-900 text-2xl uppercase tracking-tight">Welcome <span class="text-[#00ff85]">Back</span></h1>
+                <p class="text-white/40 text-xs font-medium uppercase tracking-widest mt-2">Secure encrypted access</p>
+            </div>
+
+            <div class="glass-card rounded-3xl p-8 relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-40 h-40 bg-[#00ff85] opacity-5 blur-3xl"></div>
+
+                <form @submit.prevent="handleSignIn" class="space-y-6">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-white/40 mb-2 ml-1">Network Identity</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-white/20">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path></svg>
+                            </span>
+                            <input type="email" x-model="email" required placeholder="Email Address" class="input-field w-full py-4 pl-11 pr-4 rounded-xl text-sm font-medium">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2 ml-1">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-white/40">Access Code</label>
+                            <a href="forgotpassword.html" class="text-[9px] font-bold uppercase text-[#00ff85]/60 hover:text-[#00ff85]">Forgot?</a>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-white/20">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            </span>
+                            <input type="password" x-model="password" required placeholder="••••••••" class="input-field w-full py-4 pl-11 pr-4 rounded-xl text-sm font-medium">
+                        </div>
+                    </div>
+
+                    <button type="submit" 
+                            :disabled="loading"
+                            class="w-full py-4 bg-[#00ff85] text-[#0a0f1a] rounded-xl outfit font-900 uppercase tracking-widest text-sm hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(0,255,133,0.2)] disabled:opacity-50">
+                        <span x-text="loading ? 'Authenticating...' : 'Sign In'"></span>
+                    </button>
+                </form>
+
+                <div class="mt-8 pt-6 border-t border-white/5 text-center">
+                    <p class="text-[11px] text-white/40 font-medium">
+                        New to DLS26? 
+                        <a href="register.html" class="text-[#00ff85] font-bold ml-1 hover:underline">Create Account</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="loading" class="text-center">
+            <div class="w-12 h-12 border-4 border-[#00ff8533] border-t-[#00ff85] rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="outfit font-900 uppercase tracking-widest text-[10px] text-[#00ff85]">Accessing Database</p>
+        </div>
+    </main>
+
+    <script>
+        const _supabase = supabase.createClient('https://irzgzyfscoosvixwvfhx.supabase.co', 'sb_publishable_5WjuPG6Wg96_ySp0DcDuTw_JTGWxSJh');
+
+        function authApp() {
+            return {
+                email: '',
+                password: '',
+                loading: false,
+
+                async handleSignIn() {
+                    this.loading = true;
+                    try {
+                        const { data, error } = await _supabase.auth.signInWithPassword({
+                            email: this.email,
+                            password: this.password
+                        });
+
+                        if (error) throw error;
+
+                        // On Success, direct to index.html
+                        window.location.href = 'index.html';
+
+                    } catch (err) {
+                        alert(err.message);
+                        this.loading = false;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
