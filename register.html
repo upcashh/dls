@@ -270,7 +270,7 @@
                         // 3. Insert Database Record
                         const { error: dbError } = await _supabase.from('userinfo').insert([{
                             username: this.formData.username,
-                            team_name: this.formData.teamName,
+                            team_name: this.formData.team_name,
                             email: this.formData.email,
                             phone: this.formData.phone,
                             logo_url: logoUrl
