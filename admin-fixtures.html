@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DLS26 | Fixture Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@900&family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #0a0f1a; color: white; font-family: 'DM Sans', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(0, 255, 133, 0.2); backdrop-blur: 10px; }
+        .outfit { font-family: 'Outfit', sans-serif; }
+    </style>
+</head>
+<body x-data="generator()" x-init="fetchTeams()">
+
+    <div class="max-w-2xl mx-auto p-6 pt-12">
+        <div class="text-center mb-10">
+            <h1 class="outfit text-4xl font-900 tracking-tighter uppercase">Fixture <span class="text-[#00ff85]">Generator</span></h1>
+            <p class="text-white/40 text-xs mt-2 tracking-widest font-bold">ALGORITHMIC MATCHMAKING v1.0</p>
+        </div>
+
+        <div class="glass rounded-3xl p-8 text-center">
+            <div class="mb-6">
+                <span class="text-5xl font-black outfit text-[#00ff85]" x-text="teams.length">0</span>
+                <p class="text-[10px] text-white/30 uppercase font-black tracking-widest mt-2">Teams Detected in Sector</p>
+            </div>
+
+            <div x-show="teams.length < 2" class="text-red-400 text-xs mb-6">
+                Insufficient data. Need at least 2 teams to generate.
+            </div>
+
+            <div class="space-y-4">
+                <button @click="generateMatches()" :disabled="generating || teams.length < 2"
+                    class="w-full py-4 bg-[#00ff85] text-[#0a0f1a] rounded-xl outfit font-900 uppercase tracking-widest text-sm hover:scale-[1.02] transition-all disabled:opacity-30">
+                    <span x-text="generating ? 'PROCESSING...' : 'GENERATE NEXT ROUND'"></span>
+                </button>
+
+                <button @click="clearFixtures()" class="w-full py-4 border border-red-500/30 text-red-500 rounded-xl outfit font-900 uppercase tracking-widest text-[10px] hover:bg-red-500/5 transition-all">
+                    WIPE EXISTING FIXTURES
+                </button>
+            </div>
+        </div>
+
+        <div x-show="preview.length > 0" class="mt-10 space-y-3">
+            <h3 class="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-2">Generation Preview</h3>
+            <template x-for="match in preview">
+                <div class="glass p-4 rounded-xl flex items-center justify-between text-[11px] font-bold">
+                    <span x-text="match.home_name"></span>
+                    <span class="text-[#00ff85]">VS</span>
+                    <span x-text="match.away_name"></span>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <script>
+        const _supabase = supabase.createClient('https://irzgzyfscoosvixwvfhx.supabase.co', 'sb_publishable_5WjuPG6Wg96_ySp0DcDuTw_JTGWxSJh');
+
+        function generator() {
+            return {
+                teams: [],
+                preview: [],
+                generating: false,
+
+                async fetchTeams() {
+                    const { data } = await _supabase.from('standings').select('team_name, logo_url');
+                    if (data) this.teams = data;
+                },
+
+                async generateMatches() {
+                    this.generating = true;
+                    // Shuffle teams
+                    let shuffled = [...this.teams].sort(() => 0.5 - Math.random());
+                    let pairs = [];
+
+                    // Create pairs
+                    for (let i = 0; i < shuffled.length; i += 2) {
+                        if (shuffled[i + 1]) {
+                            pairs.push({
+                                home_name: shuffled[i].team_name,
+                                home_logo: shuffled[i].logo_url,
+                                away_name: shuffled[i + 1].team_name,
+                                away_logo: shuffled[i + 1].logo_url,
+                                time: "20:00" // Default time
+                            });
+                        }
+                    }
+
+                    this.preview = pairs;
+
+                    // Insert into Supabase
+                    const { error } = await _supabase.from('fixtures').insert(pairs);
+                    
+                    if (error) alert(error.message);
+                    else alert("Round Generated Successfully!");
+                    
+                    this.generating = false;
+                },
+
+                async clearFixtures() {
+                    if(!confirm("Wipe all current fixtures?")) return;
+                    const { error } = await _supabase.from('fixtures').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                    if (!error) {
+                        this.preview = [];
+                        alert("Fixtures Cleared.");
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
