@@ -209,6 +209,33 @@
     </nav>
 
     <script>
+        // Replace these with your actual Supabase details
+const supabaseUrl = 'https://irzgzyfscoosvixwvfhx.supabase.co'; 
+const supabaseKey = 'sb_publishable_5WjuPG6Wg96_ySp0DcDuTw_JTGWxSJh'; 
+const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+// Update your init() function in the HTML to pull real data:
+async function init() {
+    const { data, error } = await _supabase
+        .from('standings')
+        .select('*')
+        .order('points', { ascending: false });
+
+    if (data) {
+        this.standings = data.map(item => ({
+            name: item.team_name,
+            logo: item.logo_url,
+            played: item.played,
+            won: item.won,
+            drawn: item.drawn,
+            lost: item.lost,
+            gs: item.gs,
+            ga: item.ga,
+            points: item.points
+        }));
+    }
+        }
+        
         function leagueApp() {
             return {
                 view: 'home',
