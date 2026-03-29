@@ -103,7 +103,7 @@
             </template>
         </div>
 
-        <div x-show="view !== 'lobby'" x-transition x-cloak>
+        <div x-show="view !== 'lobby' && view !== 'admin'" x-transition x-cloak>
             
             <div x-show="view === 'home'">
                 <div class="flex items-center justify-between mb-4 px-1">
@@ -163,7 +163,8 @@
                 </div>
                 <div class="space-y-3">
                     <template x-for="match in fixtures" :key="match.id">
-                        <div class="glass-card p-4 rounded-xl flex items-center justify-between border-l-4" 
+                        <div @click="selectedMatch = match; view = 'admin'; form.h_score=0; form.a_score=0;" 
+                             class="glass-card p-4 rounded-xl flex items-center justify-between border-l-4 cursor-pointer hover:border-[#00ff85] transition-all" 
                              :class="match.match_date === '1st Leg' ? 'border-l-[#00ff85]' : 'border-l-blue-400'">
                             <div class="flex items-center space-x-2 w-1/3">
                                 <img :src="match.home_logo" class="w-5 h-5 object-contain">
@@ -198,12 +199,44 @@
                     </template>
                 </div>
             </div>
+        </div>
 
+        <div x-show="view === 'admin'" x-transition x-cloak class="max-w-md mx-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="outfit font-900 text-xl uppercase tracking-tighter text-red-500">Result <span class="text-white">Protocol</span></h2>
+                <button @click="view = 'fixtures'" class="text-[10px] font-black uppercase text-white/30 tracking-widest">Cancel</button>
+            </div>
+
+            <template x-if="selectedMatch">
+                <div class="glass-card rounded-3xl p-8 border-red-500/30">
+                    <div class="flex justify-between items-center mb-10">
+                        <div class="text-center w-1/3">
+                            <img :src="selectedMatch.home_logo" class="w-12 h-12 mx-auto mb-3 object-contain">
+                            <p class="text-[10px] font-black uppercase truncate" x-text="selectedMatch.home_team"></p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <input type="number" x-model="form.h_score" class="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl text-center font-black text-2xl text-[#00ff85] focus:border-[#00ff85] outline-none">
+                            <span class="text-white/10 font-black text-xl">:</span>
+                            <input type="number" x-model="form.a_score" class="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl text-center font-black text-2xl text-[#00ff85] focus:border-[#00ff85] outline-none">
+                        </div>
+                        <div class="text-center w-1/3">
+                            <img :src="selectedMatch.away_logo" class="w-12 h-12 mx-auto mb-3 object-contain">
+                            <p class="text-[10px] font-black uppercase truncate" x-text="selectedMatch.away_team"></p>
+                        </div>
+                    </div>
+
+                    <button @click="submitResult()" 
+                            :disabled="submitting"
+                            class="w-full py-4 bg-red-600 text-white rounded-xl outfit font-900 uppercase tracking-widest text-sm shadow-lg active:scale-95 transition-all disabled:opacity-50">
+                        <span x-text="submitting ? 'EXECUTING...' : 'CONFIRM & PURGE FIXTURE'"></span>
+                    </button>
+                </div>
+            </template>
         </div>
 
     </main>
 
-    <nav x-show="view !== 'lobby'" class="fixed bottom-0 left-0 right-0 bg-[#0a0f1a] border-t border-white/5 flex justify-around p-2 pb-6 backdrop-blur-lg z-50">
+    <nav x-show="view !== 'lobby' && view !== 'admin'" class="fixed bottom-0 left-0 right-0 bg-[#0a0f1a] border-t border-white/5 flex justify-around p-2 pb-6 backdrop-blur-lg z-50">
         <button @click="view = 'home'" :class="view === 'home' ? 'nav-active' : ''" class="flex flex-col items-center p-3 rounded-xl text-white/40 w-full transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
             <span class="text-[8px] font-bold uppercase mt-1.5 tracking-widest">Table</span>
@@ -231,18 +264,20 @@
                 userTeam: '', 
                 currentMatchday: 1,
                 totalMatchdays: 0,
+                selectedMatch: null,
+                submitting: false,
+                form: { h_score: 0, a_score: 0 },
                 
                 async init() {
                     const { data: { user } } = await _supabase.auth.getUser();
                     if (!user) { window.location.href = 'signin.html'; return; }
 
-                    const { data: userData } = await _supabase.from('standings').select('team_name').eq('user_id', user.id).single();
+                    const { data: userData } = await _supabase.from('standings').select('team_name').eq('user_id', user.id).maybeSingle();
                     if (userData) this.userTeam = userData.team_name;
 
                     const { data: leagueData } = await _supabase.from('leagues').select('*').eq('name', 'Premier League').single();
                     if (leagueData) this.activeLeague = leagueData;
 
-                    // UPDATED MAPPING TO INCLUDE ALL STATS
                     const { data: standData } = await _supabase.from('standings').select('*').order('points', { ascending: false }).order('gd', { ascending: false });
                     if (standData) {
                         this.standings = standData.map(i => ({ 
@@ -279,6 +314,63 @@
                         .order('match_date', { ascending: true }); 
                     
                     if (fixData) this.fixtures = fixData;
+                },
+
+                async submitResult() {
+                    if(!confirm("Purge fixture and finalize score?")) return;
+                    this.submitting = true;
+                    const m = this.selectedMatch;
+                    const hScore = parseInt(this.form.h_score);
+                    const aScore = parseInt(this.form.a_score);
+
+                    try {
+                        // 1. Log to Results History
+                        await _supabase.from('results').insert([{
+                            home_name: m.home_team,
+                            away_name: m.away_team,
+                            h_score: hScore,
+                            a_score: aScore,
+                            league_id: m.league_id,
+                            matchday: m.matchday
+                        }]);
+
+                        // 2. Update Table Stats
+                        await this.updateTeamStats(m.home_team, hScore, aScore);
+                        await this.updateTeamStats(m.away_team, aScore, hScore);
+
+                        // 3. Delete from Fixtures
+                        await _supabase.from('fixtures').delete().eq('id', m.id);
+
+                        // 4. Reset & Refresh
+                        this.view = 'home';
+                        await this.init();
+                    } catch (e) {
+                        alert("Logic Error: Database update failed.");
+                        console.error(e);
+                    } finally {
+                        this.submitting = false;
+                        this.selectedMatch = null;
+                    }
+                },
+
+                async updateTeamStats(teamName, gs, ga) {
+                    const { data: current } = await _supabase.from('standings').select('*').eq('team_name', teamName).single();
+                    
+                    let win = gs > ga ? 1 : 0;
+                    let draw = gs === ga ? 1 : 0;
+                    let loss = gs < ga ? 1 : 0;
+                    let pointsToAdd = (win * 3) + (draw * 1);
+
+                    await _supabase.from('standings').update({
+                        played: (current.played || 0) + 1,
+                        won: (current.won || 0) + win,
+                        drawn: (current.drawn || 0) + draw,
+                        lost: (current.lost || 0) + loss,
+                        gs: (current.gs || 0) + gs,
+                        ga: (current.ga || 0) + ga,
+                        gd: (current.gd || 0) + (gs - ga),
+                        points: (current.points || 0) + pointsToAdd
+                    }).eq('team_name', teamName);
                 },
 
                 async logout() {
