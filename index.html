@@ -86,7 +86,7 @@
     <main class="max-w-4xl mx-auto p-4 pt-8">
 
         <div x-show="view === 'lobby'" x-transition x-cloak>
-            <h2 class="outfit font-900 text-2xl uppercase tracking-tighter mb-6 px-1 text-center">Available <span class="text-[#00ff85]">Deployment</span></h2>
+            <h2 class="outfit font-900 text-2xl uppercase tracking-tighter mb-6 px-1 text-center">Running<span class="text-[#00ff85]">Leagues</span></h2>
             
             <template x-if="activeLeague">
                 <div class="glass-card rounded-3xl p-8 relative overflow-hidden group transition-all duration-500">
@@ -115,7 +115,7 @@
                             </div>
                             <div>
                                 <p class="text-[10px] text-white/30 uppercase font-black">Prize</p>
-                                <p class="text-lg font-bold outfit" x-text="activeLeague.prize_pool || 'GOLD'">GOLD</p>
+                                <p class="text-lg font-bold outfit" x-text="activeLeague.prize_pool || 'GOLD'">Free Tier</p>
                             </div>
                         </div>
                         <button @click="enterLeague()" class="w-full py-4 bg-[#00ff85] text-[#0a0f1a] rounded-xl outfit font-900 uppercase tracking-widest text-sm hover:scale-[1.02] transition-all shadow-lg">
@@ -130,7 +130,7 @@
             
             <div x-show="view === 'home'">
                 <div class="flex items-center justify-between mb-4 px-1">
-                    <h2 class="outfit font-900 text-xl uppercase tracking-tighter">League <span class="text-[#00ff85]">Analytics</span></h2>
+                    <h2 class="outfit font-900 text-xl uppercase tracking-tighter">League <span class="text-[#00ff85]">Standings</span></h2>
                 </div>
                 <div class="glass-card rounded-2xl overflow-hidden">
                     <table class="w-full text-left table-fixed">
@@ -207,7 +207,7 @@
             </div>
 
             <div x-show="view === 'results'">
-                <h2 class="outfit font-900 text-xl uppercase tracking-tighter mb-4">Historical <span class="text-[#00ff85]">Data</span></h2>
+                <h2 class="outfit font-900 text-xl uppercase tracking-tighter mb-4">Match <span class="text-[#00ff85]">Results</span></h2>
                 <div class="space-y-3">
                     <template x-for="res in results" :key="res.id">
                         <div class="glass-card p-4 rounded-xl flex items-center justify-between">
