@@ -505,7 +505,7 @@
     this.stats.biggestWin = bwStr;
     this.stats.biggestLoss = blStr;
     // We use [...form] to create a fresh array so Alpine definitely sees the change
-    this.userForm = [...form];
+    this.userForm = [...form].reverse();
 
                 },
 
