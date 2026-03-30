@@ -220,10 +220,14 @@
                         <span class="text-[8px] bg-[#00ff851a] text-[#00ff85] px-2 py-0.5 rounded font-bold uppercase">Last 5</span>
                     </div>
                     <div class="flex space-x-2">
-                        <template x-for="(f, i) in userForm">
-                            <div :class="[f === 'W' ? 'form-w' : f === 'D' ? 'form-d' : 'form-l', i === userForm.length-1 ? 'w-10 h-10 ring-2 ring-[#00ff8533]' : 'w-8 h-8 opacity-40']" 
-                                 class="rounded-lg flex items-center justify-center font-black text-[10px] transition-all" x-text="f"></div>
-                        </template>
+                        <template x-for="(f, i) in userForm" :key="i">
+    <div :class="{
+        'bg-[#00ff85]': f === 'W',
+        'bg-yellow-500': f === 'D',
+        'bg-red-500': f === 'L'
+    }" class="w-8 h-8 rounded-lg flex items-center justify-center font-black text-[#0a0f1a] text-[10px] shadow-lg shadow-black/20" x-text="f"></div>
+</template>
+
                     </div>
                 </div>
 
