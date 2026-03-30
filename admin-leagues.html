@@ -190,7 +190,8 @@
 
                 async load() {
                     const { data: L } = await _sb.from('leagues').select('*').order('created_at', { ascending: false });
-                    const { data: U } = await _sb.from('userinfo').select('email, team_name, team_logo');
+                    const { data: U } = await _sb.from('userinfo').select('email, team_name, logo_url
+                                                                ');
                     const { data: M } = await _sb.from('league_members').select('*');
                     
                     this.leagues = L || [];
@@ -232,7 +233,7 @@
                     const { error } = await _sb.from('league_members').insert([{
                         league_id: this.selectedLeagueId,
                         team_name: team.team_name,
-                        team_logo: team.team_logo
+                        logo_url: team.logo_url
                     }]);
 
                     if (error) {
