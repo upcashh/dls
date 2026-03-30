@@ -118,8 +118,8 @@
                                 <p class="text-lg font-black outfit" x-text="((stats.totalGS + stats.totalGA) / (results.length || 1)).toFixed(1)"></p>
                             </div>
                             <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                                <p class="text-[8px] text-white/30 uppercase font-black mb-1">Status</p>
-                                <p class="text-[10px] font-black outfit text-[#00ff85] mt-1">ACTIVE</p>
+                                <p class="text-[8px] text-white/30 uppercase font-black mb-1">Tier</p>
+                                <p class="text-[10px] font-black outfit text-[#00ff85] mt-1">85+</p>
                             </div>
                         </div>
                         
@@ -283,9 +283,10 @@
                                 <img :src="res.home_logo" class="logo-circle-sm">
                                 <span class="text-[10px] font-black uppercase truncate tracking-tighter" x-text="res.home_name"></span>
                             </div>
-                            <div class="bg-[#00ff8515] px-4 py-1.5 rounded-xl border border-[#00ff8533] min-w-[60px] text-center">
-    <span class="text-[#00ff85] font-black text-sm italic" x-text="res.h_score + ' - ' + res.a_score"></span>
+                            <div class="bg-[#00ff8515] px-3 py-1.5 rounded-xl border border-[#00ff8533] min-w-[80px] flex items-center justify-center">
+    <span class="text-[#00ff85] font-black text-sm not-italic whitespace-nowrap" x-text="res.h_score + ' - ' + res.a_score"></span>
 </div>
+
 
                             <div class="flex items-center space-x-3 w-[40%] justify-end">
                                 <span class="text-[10px] font-black uppercase truncate text-right tracking-tighter" x-text="res.away_name"></span>
