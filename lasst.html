@@ -472,9 +472,9 @@
                     const file = e.target.files[0];
                     if (!file) return;
                     const name = `${Date.now()}_logo`;
-                    const { data } = await _supabase.storage.from('avatars').upload(name, file);
+                    const { data } = await _supabase.storage.from('logos').upload(name, file);
                     if (data) {
-                        const url = `https://irzgzyfscoosvixwvfhx.supabase.co/storage/v1/object/public/avatars/${name}`;
+                        const url = `https://irzgzyfscoosvixwvfhx.supabase.co/storage/v1/object/public/logos/${name}`;
                         await _supabase.from('userinfo').update({ team_logo: url }).eq('email', this.profile.email);
                         this.profile.team_logo = url;
                     }
