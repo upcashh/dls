@@ -470,27 +470,43 @@
                 },
 
                 async uploadlogo(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+    try {
+        const file = e.target.files[0];
+        if (!file) return;
 
-    const fileName = `logo_${Date.now()}.png`;
-    
-    // 1. Upload to storage
-    const { data, error } = await _supabase.storage.from('logos').upload(fileName, file);
+        const fileName = `logo_${Date.now()}.png`;
+        
+        // 1. Upload to storage
+        const { data, error: storageError } = await _supabase.storage
+            .from('logos')
+            .upload(fileName, file);
 
-    if (data) {
-        // 2. Get the official public URL directly from Supabase
-        const { data: { publicUrl } } = _supabase.storage.from('logos').getPublicUrl(fileName);
-        
-        // 3. Update the database and local state
-        await _supabase.from('userinfo').update({ team_logo: publicUrl }).eq('email', this.profile.email);
-        this.profile.team_logo = publicUrl;
-        
-        alert("Logo Updated Successfully!");
-    } else {
-        alert("Upload failed: " + error.message);
+        if (storageError) throw storageError;
+
+        if (data) {
+            // 2. Get the official public URL
+            const { data: { publicUrl } } = _supabase.storage
+                .from('logos')
+                .getPublicUrl(fileName);
+            
+            // 3. Update the database
+            const { error: dbError } = await _supabase
+                .from('userinfo')
+                .update({ team_logo: publicUrl })
+                .eq('email', this.profile.email);
+
+            if (dbError) throw dbError;
+
+            // 4. Update UI
+            this.profile.team_logo = publicUrl;
+            alert("Logo Updated!");
+        }
+    } catch (err) {
+        console.error("Critical Error:", err.message);
+        alert("Error: " + err.message);
     }
-}
+}, 
+
 
 
                 initScroll() {
