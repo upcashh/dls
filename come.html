@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0f1a">
+    <title>DLS26 | Command Center Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+    <style>
+        body { background-color: #0a0f1a; font-family: 'DM Sans', sans-serif; color: white; overflow-x: hidden; scroll-behavior: smooth; }
+        .outfit { font-family: 'Outfit', sans-serif; }
+        [x-cloak] { display: none !important; }
+
+        .glass-card { 
+            background: linear-gradient(160deg, #111827 0%, #0d1321 100%); 
+            border: 1px solid rgba(0, 255, 133, 0.15);
+        }
+
+        /* SKELETON ANIMATION */
+        .skeleton {
+            background: linear-gradient(90deg, #161d2b 25%, #1f2937 50%, #161d2b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .nav-active { color: #00ff85 !important; background: rgba(0, 255, 133, 0.08); border-top: 2px solid #00ff85; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .active-md { background: #00ff85; color: #0a0f1a; box-shadow: 0 0 15px rgba(0, 255, 133, 0.3); }
+
+        /* TABLE CONSTRAINTS - NO HORIZONTAL SCROLL */
+        .table-fixed-layout { table-layout: fixed; width: 100%; border-collapse: collapse; }
+        .col-pos { width: 8%; text-align: center; font-size: 9px; }
+        .col-club { width: 35%; overflow: hidden; }
+        .col-stat { width: 8%; text-align: center; font-size: 9px; color: rgba(255,255,255,0.6); }
+        .col-pts { width: 11%; text-align: center; font-weight: 900; color: #00ff85; font-size: 10px; }
+
+        .logo-circle-md { width: 38px; height: 38px; border-radius: 12px; object-fit: cover; background: #1a2333; border: 1px solid rgba(255,255,255,0.1); }
+        .logo-circle-sm { width: 20px; height: 20px; border-radius: 5px; object-fit: cover; }
+
+        .form-box { width: 18px; height: 18px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; }
+        .form-w { background: #00ff85; color: #0a0f1a; }
+        .form-d { background: #ffcc00; color: #0a0f1a; }
+        .form-l { background: #ff4d4d; color: white; }
+    </style>
+</head>
+<body x-data="leagueApp()" x-init="init()" class="pb-24">
+
+    <div x-show="loading" class="fixed inset-0 z-[100] bg-[#0a0f1a] p-6 space-y-6">
+        <div class="flex justify-between items-center mb-10">
+            <div class="h-8 w-32 skeleton rounded-lg"></div>
+            <div class="h-10 w-10 skeleton rounded-full"></div>
+        </div>
+        <div class="h-64 w-full skeleton rounded-[2rem]"></div>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="h-24 skeleton rounded-2xl"></div>
+            <div class="h-24 skeleton rounded-2xl"></div>
+        </div>
+        <div class="h-40 w-full skeleton rounded-2xl"></div>
+    </div>
+
+    <header class="bg-[#0a0f1a] border-b border-[#00ff8526] sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <template x-if="view !== 'lobby'">
+                    <button @click="view = 'lobby'" class="mr-2 text-white/40">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                </template>
+                <div class="leading-none">
+                    <span class="outfit text-white text-xl font-900 tracking-tighter uppercase">DLS<span class="text-[#00ff85]">26</span></span>
+                    <span class="block text-[8px] tracking-[0.3em] font-bold text-[#00ff85] opacity-80 uppercase" x-text="view === 'lobby' ? 'Network Lobby' : 'Sector Control'"></span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <template x-if="isAdmin">
+                    <span class="text-[8px] bg-red-500/20 text-red-500 px-2 py-1 rounded font-black uppercase">Admin</span>
+                </template>
+                <img :src="profile.logo_url || 'https://via.placeholder.com/50'" class="w-8 h-8 rounded-full border border-[#00ff8533] object-cover">
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4 pt-6" x-show="!loading">
+
+        <div x-show="view === 'lobby'" x-transition>
+            <div class="mb-8 text-center">
+                <h2 class="outfit font-900 text-3xl uppercase tracking-tighter">Command <span class="text-[#00ff85]">Lobby</span></h2>
+                <p class="text-white/30 text-[10px] font-bold uppercase tracking-widest mt-1">Select an operational sector</p>
+            </div>
+
+            <template x-if="activeLeague">
+                <div class="glass-card rounded-[2.5rem] p-1 border-t-4 border-t-[#00ff85] overflow-hidden">
+                    <div class="p-8 flex flex-col items-center text-center bg-[#0d1321]">
+                        <div class="w-20 h-20 bg-[#00ff8515] rounded-3xl flex items-center justify-center mb-6 border border-[#00ff8533] animate-pulse">
+                            <svg class="w-10 h-10 text-[#00ff85]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        </div>
+                        
+                        <h3 class="outfit font-900 text-4xl uppercase tracking-tight mb-1" x-text="activeLeague.name"></h3>
+                        <div class="flex items-center gap-3 mb-8">
+                            <span class="text-[#00ff85] font-black text-[10px] tracking-[.2em] bg-[#00ff8515] px-3 py-1 rounded-full uppercase">Season <span x-text="activeLeague.season_number"></span></span>
+                            <span class="text-white/40 font-black text-[10px] tracking-[.2em] bg-white/5 px-3 py-1 rounded-full uppercase" x-text="activeLeague.status"></span>
+                        </div>
+                        
+                        <div class="w-full grid grid-cols-3 gap-2 mb-8">
+                            <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                <p class="text-[8px] text-white/30 uppercase font-black mb-1">Teams</p>
+                                <p class="text-lg font-black outfit text-[#00ff85]" x-text="standings.length"></p>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                <p class="text-[8px] text-white/30 uppercase font-black mb-1">Goal Avg</p>
+                                <p class="text-lg font-black outfit" x-text="((stats.totalGS + stats.totalGA) / (results.length || 1)).toFixed(1)"></p>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                <p class="text-[8px] text-white/30 uppercase font-black mb-1">Status</p>
+                                <p class="text-[10px] font-black outfit text-[#00ff85] mt-1">ONLINE</p>
+                            </div>
+                        </div>
+                        
+                        <button @click="enterLeague()" class="w-full py-5 bg-[#00ff85] text-[#0a0f1a] rounded-2xl outfit font-900 uppercase tracking-widest shadow-[0_10px_30px_rgba(0,255,133,0.2)] hover:scale-[1.02] active:scale-95 transition-all">
+                            ENTER PROTOCOL
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <div x-show="view !== 'lobby' && view !== 'admin'" x-transition>
+            
+            <div x-show="view === 'home'">
+                <h2 class="outfit font-900 text-xl uppercase mb-4 tracking-tight italic">Live <span class="text-[#00ff85]">Standings</span></h2>
+                <div class="glass-card rounded-2xl overflow-hidden shadow-2xl">
+                    <table class="table-fixed-layout text-left">
+                        <thead class="bg-black/60 border-b border-white/5 text-[8px] uppercase text-white/40 font-black">
+                            <tr>
+                                <th class="py-4 pl-3 col-pos">#</th>
+                                <th class="py-4 pl-2 col-club">CLUB</th>
+                                <th class="col-stat">P</th>
+                                <th class="col-stat">W</th>
+                                <th class="col-stat">D</th>
+                                <th class="col-stat">L</th>
+                                <th class="col-stat">GD</th>
+                                <th class="col-pts">PTS</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 text-[10px]">
+                            <template x-for="(team, index) in standings" :key="index">
+                                <tr :class="team.name === userTeam ? 'bg-[#00ff8510] border-l-2 border-[#00ff85]' : ''" class="h-14">
+                                    <td class="pl-3 font-black text-white/20" x-text="index + 1"></td>
+                                    <td class="pl-2">
+                                        <div class="flex items-center space-x-2 overflow-hidden">
+                                            <img :src="team.logo" class="logo-circle-sm border border-white/10">
+                                            <span class="font-bold uppercase truncate tracking-tighter" x-text="team.name"></span>
+                                        </div>
+                                    </td>
+                                    <td class="col-stat" x-text="team.played"></td>
+                                    <td class="col-stat" x-text="team.won"></td>
+                                    <td class="col-stat" x-text="team.drawn"></td>
+                                    <td class="col-stat" x-text="team.lost"></td>
+                                    <td class="col-stat font-bold" :class="team.gd >= 0 ? 'text-white/40' : 'text-red-400'" x-text="(team.gd > 0 ? '+' : '') + team.gd"></td>
+                                    <td class="col-pts" x-text="team.points"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div x-show="view === 'fixtures'">
+                <h2 class="outfit font-900 text-xl uppercase mb-4">Operational <span class="text-[#00ff85]">Fixtures</span></h2>
+                <div class="flex space-x-2 overflow-x-auto no-scrollbar mb-6 py-2">
+                    <template x-for="day in availableMatchdays" :key="day">
+                        <button @click="currentMatchday = day; fetchFixtures()" 
+                                :class="currentMatchday === day ? 'active-md' : 'bg-white/5 text-white/30 border-white/5'"
+                                class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase flex-shrink-0 border transition-all" x-text="'MD ' + day"></button>
+                    </template>
+                </div>
+                
+                <div class="space-y-3">
+                    <template x-for="match in fixtures" :key="match.id">
+                        <div @click="if(isAdmin) { selectedMatch = match; view = 'admin'; adminForm = {h_score:0, a_score:0}; }"
+                             :class="isAdmin ? 'cursor-pointer hover:border-[#00ff85] hover:bg-[#00ff8505]' : ''"
+                             class="glass-card p-4 rounded-2xl flex items-center justify-between border-l-4 border-[#00ff85] transition-all group">
+                            <div class="flex flex-col items-center w-[40%]">
+                                <img :src="match.home_logo" class="logo-circle-md mb-2 group-hover:scale-110 transition-transform">
+                                <span class="text-[9px] font-black uppercase text-center truncate w-full" x-text="match.home_team"></span>
+                            </div>
+                            <div class="text-center w-[20%]">
+                                <span class="text-white/20 text-[7px] font-black block uppercase mb-1" x-text="'MATCH ' + match.id.slice(-4)"></span>
+                                <div class="bg-black/40 px-2 py-1 rounded-lg border border-white/5">
+                                    <span class="text-[#00ff85] text-[10px] font-black italic">VS</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center w-[40%]">
+                                <img :src="match.away_logo" class="logo-circle-md mb-2 group-hover:scale-110 transition-transform">
+                                <span class="text-[9px] font-black uppercase text-center truncate w-full" x-text="match.away_team"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div x-show="view === 'insights'">
+                <h2 class="outfit font-900 text-xl uppercase mb-6">Tactical <span class="text-[#00ff85]">Analysis</span></h2>
+                
+                <div class="glass-card rounded-[2rem] p-6 mb-4 border-t-2 border-[#00ff85]">
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-[9px] uppercase font-black text-white/30 tracking-widest">Team Form Spectrum</p>
+                        <span class="text-[8px] bg-[#00ff851a] text-[#00ff85] px-2 py-0.5 rounded font-bold uppercase">Last 5</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <template x-for="(f, i) in userForm">
+                            <div :class="[f === 'W' ? 'form-w' : f === 'D' ? 'form-d' : 'form-l', i === userForm.length-1 ? 'w-10 h-10 ring-2 ring-[#00ff8533]' : 'w-8 h-8 opacity-40']" 
+                                 class="rounded-lg flex items-center justify-center font-black text-[10px] transition-all" x-text="f"></div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="glass-card p-5 rounded-3xl border-l-4 border-[#00ff85]">
+                        <p class="text-[8px] font-black text-white/30 uppercase mb-1">Max Offensive</p>
+                        <p class="text-2xl font-black text-[#00ff85]" x-text="stats.biggestWin"></p>
+                    </div>
+                    <div class="glass-card p-5 rounded-3xl border-l-4 border-red-500">
+                        <p class="text-[8px] font-black text-white/30 uppercase mb-1">Crit Vulnerability</p>
+                        <p class="text-2xl font-black text-red-500" x-text="stats.biggestLoss"></p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="glass-card p-6 rounded-3xl flex justify-between items-center">
+                        <div>
+                            <p class="text-[8px] font-black text-white/30 uppercase">Aggregated Scored</p>
+                            <p class="text-3xl font-black outfit" x-text="stats.totalGS"></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[8px] font-black text-white/30 uppercase">Aggregated Conceded</p>
+                            <p class="text-3xl font-black outfit" x-text="stats.totalGA"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="view === 'profile'">
+                <div class="glass-card rounded-[3rem] p-10 text-center relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-[#00ff85]"></div>
+                    <div class="relative inline-block mb-6">
+                        <img :src="profile.logo_url || 'https://via.placeholder.com/100'" class="w-28 h-28 rounded-full border-4 border-[#0a0f1a] shadow-[0_0_20px_rgba(0,255,133,0.4)] object-cover mx-auto bg-[#111827]">
+                    </div>
+
+                    <h2 class="outfit font-900 text-3xl uppercase tracking-tighter" x-text="profile.team_name"></h2>
+                    <p class="text-[#00ff85] text-[10px] font-black tracking-[.3em] mb-8 uppercase opacity-60" x-text="profile.email"></p>
+                    
+                    <div class="bg-black/20 rounded-2xl p-4 mb-8 border border-white/5 inline-flex items-center gap-4">
+                        <template x-for="f in userForm">
+                            <div :class="f === 'W' ? 'form-w' : f === 'D' ? 'form-d' : 'form-l'" class="form-box w-6 h-6 rounded-md" x-text="f"></div>
+                        </template>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-3 text-left">
+                        <div class="bg-white/5 rounded-2xl p-5 flex justify-between items-center border border-white/5">
+                            <span class="text-[9px] font-black uppercase text-white/30">Registry Contact</span>
+                            <span class="text-xs font-black outfit text-white" x-text="profile.phone || 'NO SYNC'"></span>
+                        </div>
+                    </div>
+
+                    <button @click="logout()" class="w-full mt-10 py-5 bg-red-500/5 border border-red-500/20 text-red-500 rounded-2xl font-900 uppercase text-[10px] tracking-[.3em] hover:bg-red-500 hover:text-white transition-all">TERMINATE SESSION</button>
+                </div>
+            </div>
+
+            <div x-show="view === 'results'">
+                <h2 class="outfit font-900 text-xl uppercase mb-4 italic">Historical <span class="text-[#00ff85]">Data</span></h2>
+                <div class="space-y-3">
+                    <template x-for="res in results" :key="res.id">
+                        <div class="glass-card p-4 rounded-2xl flex items-center justify-between border-r-2 border-white/10">
+                            <div class="flex items-center space-x-3 w-[40%]">
+                                <img :src="res.home_logo" class="logo-circle-sm">
+                                <span class="text-[10px] font-black uppercase truncate tracking-tighter" x-text="res.home_name"></span>
+                            </div>
+                            <div class="bg-[#00ff8515] px-4 py-1.5 rounded-xl border border-[#00ff8533] min-w-[60px] text-center">
+                                <span class="text-[#00ff85] font-black text-sm italic" x-text="res.h_score + ' - ' + res.a_score"></span>
+                            </div>
+                            <div class="flex items-center space-x-3 w-[40%] justify-end">
+                                <span class="text-[10px] font-black uppercase truncate text-right tracking-tighter" x-text="res.away_name"></span>
+                                <img :src="res.away_logo" class="logo-circle-sm">
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="view === 'admin'" x-transition class="max-w-md mx-auto">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="outfit font-900 text-2xl uppercase text-red-500 italic">Result <span class="text-white">Upload</span></h2>
+                    <p class="text-[8px] font-black text-white/30 uppercase tracking-[.2em]">Verification Protocol Active</p>
+                </div>
+                <button @click="view = 'fixtures'" class="w-10 h-10 glass-card rounded-full flex items-center justify-center text-white/40 hover:text-white">✕</button>
+            </div>
+
+            <template x-if="selectedMatch">
+                <div class="glass-card rounded-[2.5rem] p-10 border-red-500/30 bg-[#0d1321]">
+                    <div class="flex justify-between items-center mb-12">
+                        <div class="text-center w-[35%]">
+                            <div class="relative mb-4">
+                                <img :src="selectedMatch.home_logo" class="w-20 h-20 rounded-2xl mx-auto border-2 border-white/10 object-cover">
+                                <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white text-black text-[7px] font-black px-2 py-0.5 rounded uppercase">Home</div>
+                            </div>
+                            <p class="text-[10px] font-black uppercase truncate" x-text="selectedMatch.home_team"></p>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <input type="number" x-model="adminForm.h_score" class="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl text-center font-black text-2xl text-[#00ff85] outline-none focus:border-[#00ff85] focus:bg-[#00ff850a]">
+                            <span class="text-white/20 font-black">:</span>
+                            <input type="number" x-model="adminForm.a_score" class="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl text-center font-black text-2xl text-[#00ff85] outline-none focus:border-[#00ff85] focus:bg-[#00ff850a]">
+                        </div>
+
+                        <div class="text-center w-[35%]">
+                            <div class="relative mb-4">
+                                <img :src="selectedMatch.away_logo" class="w-20 h-20 rounded-2xl mx-auto border-2 border-white/10 object-cover">
+                                <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white/20 text-white text-[7px] font-black px-2 py-0.5 rounded uppercase">Away</div>
+                            </div>
+                            <p class="text-[10px] font-black uppercase truncate" x-text="selectedMatch.away_team"></p>
+                        </div>
+                    </div>
+
+                    <div class="bg-black/40 rounded-2xl p-6 mb-8 border border-white/5 space-y-4">
+                        <div class="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                            <span class="text-white/30">Calculated GD</span>
+                            <span class="text-[#00ff85]" x-text="Math.abs(adminForm.h_score - adminForm.a_score)"></span>
+                        </div>
+                        <div class="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                            <span class="text-white/30">Protocol ID</span>
+                            <span class="text-white" x-text="selectedMatch.id.slice(0,8)"></span>
+                        </div>
+                    </div>
+
+                    <button @click="submitAdminResult()" class="w-full py-5 bg-red-600 text-white rounded-2xl outfit font-900 uppercase tracking-widest text-sm shadow-[0_15px_40px_rgba(220,38,38,0.3)] active:scale-95 transition-all">
+                        CONFIRM & SYNC TABLE
+                    </button>
+                </div>
+            </template>
+        </div>
+
+    </main>
+
+    <nav x-show="view !== 'lobby' && view !== 'admin' && !loading" class="fixed bottom-0 left-0 right-0 bg-[#0a0f1a]/80 border-t border-white/5 flex justify-around p-2 pb-8 backdrop-blur-xl z-50">
+        <button @click="view = 'home'" :class="view === 'home' ? 'nav-active' : ''" class="flex flex-col items-center p-3 rounded-2xl text-white/40 w-full transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            <span class="text-[7px] font-black uppercase mt-1">Table</span>
+        </button>
+        <button @click="view = 'fixtures'; fetchFixtures()" :class="view === 'fixtures' ? 'nav-active' : ''" class="flex flex-col items-center p-3 rounded-2xl text-white/40 w-full transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span class="text-[7px] font-black uppercase mt-1">Schedules</span>
+        </button>
+        <button @click="view = 'results'" :class="view === 'results' ? 'nav-active' : ''" class="flex flex-col items-center p-3 rounded-2xl text-white/40 w-full transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[7px] font-black uppercase mt-1">History</span>
+        </button>
+        <button @click="view = 'insights'" :class="view === 'insights' ? 'nav-active' : ''" class="flex flex-col items-center p-3 rounded-2xl text-white/40 w-full transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            <span class="text-[7px] font-black uppercase mt-1">Intel</span>
+        </button>
+        <button @click="view = 'profile'" :class="view === 'profile' ? 'nav-active' : ''" class="flex flex-col items-center p-3 rounded-2xl text-white/40 w-full transition-all">
+            <img :src="profile.logo_url" class="w-5 h-5 rounded-md grayscale group-hover:grayscale-0" :class="view === 'profile' ? 'grayscale-0 ring-1 ring-[#00ff85]' : ''">
+            <span class="text-[7px] font-black uppercase mt-1">User</span>
+        </button>
+    </nav>
+
+    <script>
+        const _supabase = supabase.createClient('https://irzgzyfscoosvixwvfhx.supabase.co', 'sb_publishable_5WjuPG6Wg96_ySp0DcDuTw_JTGWxSJh');
+
+        function leagueApp() {
+            return {
+                view: 'lobby',
+                loading: true,
+                isAdmin: false,
+                adminId: 'c2185ce2-e803-410a-91a8-ea21aa206b98',
+                activeLeague: null,
+                standings: [],
+                fixtures: [],
+                availableMatchdays: [],
+                results: [],
+                userTeam: '',
+                profile: { team_name: '', logo_url: '', email: '', phone: '' },
+                currentMatchday: 1,
+                userForm: [],
+                stats: { totalGS: 0, totalGA: 0, biggestWin: '0-0', biggestLoss: '0-0' },
+                selectedMatch: null,
+                adminForm: { h_score: 0, a_score: 0 },
+
+                async init() {
+                    this.loading = true;
+                    const { data: { user } } = await _supabase.auth.getUser();
+                    if (!user) { window.location.href = 'signin.html'; return; }
+
+                    if (user.id === this.adminId) this.isAdmin = true;
+
+                    const { data: userInfo } = await _supabase.from('userinfo').select('*').eq('email', user.email).maybeSingle();
+                    if (userInfo) {
+                        this.profile = userInfo;
+                        this.userTeam = userInfo.team_name;
+                    }
+
+                    const { data: leagueData } = await _supabase.from('leagues').select('*').limit(1).single();
+                    if (leagueData) this.activeLeague = leagueData;
+
+                    await this.refreshData();
+                    await this.initMatchdays();
+                    
+                    this.loading = false;
+                },
+
+                async refreshData() {
+                    const { data: standData } = await _supabase.from('standings').select('*').order('points', { ascending: false }).order('gd', { ascending: false });
+                    if (standData) {
+                        this.standings = standData.map(i => ({ 
+                            name: i.team_name, logo: i.logo_url, played: i.played || 0, won: i.won || 0,
+                            drawn: i.drawn || 0, lost: i.lost || 0, gs: i.gs || 0, ga: i.ga || 0, gd: i.gd || 0, points: i.points || 0 
+                        }));
+                    }
+
+                    const { data: resData } = await _supabase.from('results').select('*').order('created_at', { ascending: false });
+                    if (resData) {
+                        this.results = resData;
+                        this.calculateTactics();
+                    }
+                },
+
+                async initMatchdays() {
+                    const { data } = await _supabase.from('fixtures').select('matchday');
+                    if (data) {
+                        const days = [...new Set(data.map(item => item.matchday))].sort((a, b) => a - b);
+                        this.availableMatchdays = days;
+                        if (days.length > 0) this.currentMatchday = days[0];
+                    }
+                },
+
+                enterLeague() {
+                    this.view = 'home';
+                    this.fetchFixtures();
+                },
+
+                async fetchFixtures() {
+                    const { data } = await _supabase.from('fixtures').select('*').eq('matchday', this.currentMatchday).order('created_at', { ascending: true });
+                    if (data) this.fixtures = data;
+                },
+
+                calculateTactics() {
+                    let gs = 0, ga = 0, form = [];
+                    let bestDiff = -999, worstDiff = 999;
+                    let bwStr = "0-0", blStr = "0-0";
+
+                    this.results.forEach(r => {
+                        let isHome = r.home_name === this.userTeam;
+                        let isAway = r.away_name === this.userTeam;
+
+                        if (isHome || isAway) {
+                            let my = isHome ? r.h_score : r.a_score;
+                            let op = isHome ? r.a_score : r.h_score;
+                            let diff = my - op;
+
+                            gs += my; ga += op;
+
+                            if (diff > bestDiff) { bestDiff = diff; bwStr = `${my}-${op}`; }
+                            if (diff < worstDiff) { worstDiff = diff; blStr = `${my}-${op}`; }
+
+                            if (form.length < 5) form.push(my > op ? 'W' : my === op ? 'D' : 'L');
+                        }
+                    });
+
+                    this.stats.totalGS = gs;
+                    this.stats.totalGA = ga;
+                    this.stats.biggestWin = bwStr;
+                    this.stats.biggestLoss = blStr;
+                    this.userForm = form.reverse();
+                },
+
+                async submitAdminResult() {
+                    if (!this.isAdmin) return;
+                    this.loading = true;
+                    const m = this.selectedMatch;
+                    const hS = parseInt(this.adminForm.h_score);
+                    const aS = parseInt(this.adminForm.a_score);
+
+                    try {
+                        await _supabase.from('results').insert([{
+                            home_name: m.home_team, home_logo: m.home_logo,
+                            away_name: m.away_team, away_logo: m.away_logo,
+                            h_score: hS, a_score: aS, matchday: m.matchday, league_id: m.league_id
+                        }]);
+
+                        await this.updateStats(m.home_team, hS, aS);
+                        await this.updateStats(m.away_team, aS, hS);
+                        await _supabase.from('fixtures').delete().eq('id', m.id);
+
+                        this.view = 'fixtures';
+                        await this.refreshData();
+                        await this.initMatchdays();
+                        await this.fetchFixtures();
+                    } catch (e) {
+                        alert("Protocol Error: Check Supabase RLS.");
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async updateStats(tName, gs, ga) {
+                    const { data: cur } = await _supabase.from('standings').select('*').eq('team_name', tName).single();
+                    if (!cur) return;
+                    
+                    let win = gs > ga ? 1 : 0;
+                    let draw = gs === ga ? 1 : 0;
+                    let loss = gs < ga ? 1 : 0;
+                    let pts = (win * 3) + (draw * 1);
+
+                    await _supabase.from('standings').update({
+                        played: (cur.played || 0) + 1,
+                        won: (cur.won || 0) + win,
+                        drawn: (cur.drawn || 0) + draw,
+                        lost: (cur.lost || 0) + loss,
+                        gs: (cur.gs || 0) + gs,
+                        ga: (cur.ga || 0) + ga,
+                        gd: (cur.gd || 0) + (gs - ga),
+                        points: (cur.points || 0) + pts
+                    }).eq('team_name', tName);
+                },
+
+                async logout() {
+                    await _supabase.auth.signOut();
+                    window.location.href = 'signin.html';
+                }
+            }
+        }
+    </script>
+</body>
+              </html>
