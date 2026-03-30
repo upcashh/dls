@@ -5,84 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>League Management | Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         [x-cloak] { display: none !important; }
+        body { background-color: #0a0f1a; scroll-behavior: smooth; }
+        
+        /* Interactive Button States */
+        .btn-primary {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-primary:active {
+            transform: scale(0.95);
+        }
+        
+        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0a0f1a; }
         ::-webkit-scrollbar-thumb { background: #1a2233; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #00ff85; }
+
+        /* Smooth Card Entrance */
+        .card-entry {
+            animation: fadeInUp 0.6s ease-out both;
+        }
     </style>
 </head>
-<body class="bg-[#0a0f1a] text-white min-h-screen font-sans antialiased selection:bg-[#00ff85] selection:text-black" x-data="adminPanel()" x-init="init()">
+<body class="text-white min-h-screen font-sans antialiased selection:bg-[#00ff85] selection:text-black" x-data="adminPanel()" x-init="init()">
 
     <div class="max-w-7xl mx-auto p-4 md:p-8">
-        <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 animate__animated animate__fadeInDown">
             <div>
-                <h1 class="text-4xl font-black tracking-tight text-[#00ff85] uppercase">League Control</h1>
-                <p class="text-gray-400 mt-1">Initialize seasons and manage team rosters across all divisions.</p>
+                <h1 class="text-5xl font-black tracking-tighter text-[#00ff85] uppercase italic">League Control</h1>
+                <p class="text-gray-400 mt-2 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-[#00ff85] animate-ping"></span>
+                    Live Management System v2.0
+                </p>
             </div>
-            <div class="flex gap-3">
-                <button @click="load()" class="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                </button>
-            </div>
+            <button @click="load()" class="group p-4 bg-white/5 border border-white/10 rounded-2xl hover:border-[#00ff85]/50 transition-all duration-500 hover:rotate-180">
+                <svg class="w-6 h-6 text-[#00ff85]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+            </button>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
             
-            <div class="lg:col-span-5 bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-sm">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-xl bg-[#00ff85]/10 flex items-center justify-center text-[#00ff85]">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+            <div class="lg:col-span-5 bg-white/5 p-8 rounded-[2.5rem] border border-white/10 backdrop-blur-xl card-entry" style="animation-delay: 0.1s">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-12 h-12 rounded-2xl bg-[#00ff85]/10 flex items-center justify-center text-[#00ff85] animate__animated animate__pulse animate__infinite">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                     </div>
-                    <h2 class="text-xl font-bold uppercase tracking-wider">New League</h2>
+                    <h2 class="text-2xl font-black uppercase italic">New League</h2>
                 </div>
                 
-                <div class="space-y-4">
-                    <input type="text" x-model="form.name" placeholder="League Name (e.g. Grand Masters)" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-[#00ff85] focus:outline-none transition">
+                <div class="space-y-5">
+                    <div class="group">
+                        <input type="text" x-model="form.name" placeholder="League Name" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-[#00ff85] focus:outline-none transition-all duration-300">
+                    </div>
                     
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 mb-1 block">Season Number</label>
-                            <input type="number" x-model="form.season" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-[#00ff85] focus:outline-none transition">
+                        <div class="space-y-1">
+                            <span class="text-[10px] text-gray-500 uppercase font-black ml-2">Season</span>
+                            <input type="number" x-model="form.season" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-[#00ff85] focus:outline-none transition-all">
                         </div>
-                        <div>
-                            <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 mb-1 block">Total Slots</label>
-                            <input type="number" x-model="form.slots" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-[#00ff85] focus:outline-none transition">
+                        <div class="space-y-1">
+                            <span class="text-[10px] text-gray-500 uppercase font-black ml-2">Total Slots</span>
+                            <input type="number" x-model="form.slots" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-[#00ff85] focus:outline-none transition-all">
                         </div>
                     </div>
 
-                    <input type="text" x-model="form.prize" placeholder="Prize Pool (e.g. $1,000.00)" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-[#00ff85] focus:outline-none transition">
+                    <input type="text" x-model="form.prize" placeholder="Prize Pool (e.g. 5,000 KES)" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-[#00ff85] focus:outline-none transition-all">
                     
-                    <button @click="saveLeague" class="w-full bg-[#00ff85] text-black font-black py-4 rounded-2xl shadow-lg shadow-[#00ff85]/20 hover:scale-[1.01] active:scale-95 transition">
-                        INITIALIZE LEAGUE
+                    <button @click="saveLeague" class="btn-primary w-full bg-[#00ff85] text-black font-black py-5 rounded-2xl shadow-xl shadow-[#00ff85]/20 hover:shadow-[#00ff85]/40 uppercase tracking-widest text-sm">
+                        Initialize League
                     </button>
                 </div>
             </div>
 
-            <div class="lg:col-span-7 bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-sm">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+            <div class="lg:col-span-7 bg-white/5 p-8 rounded-[2.5rem] border border-white/10 backdrop-blur-xl card-entry" style="animation-delay: 0.2s">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
                     </div>
-                    <h2 class="text-xl font-bold uppercase tracking-wider">Assign Team</h2>
+                    <h2 class="text-2xl font-black uppercase italic">Add Team</h2>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div class="space-y-2">
-                        <label class="text-[10px] text-gray-500 uppercase font-bold ml-1">Target League</label>
-                        <select x-model="selectedLeagueId" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-blue-400 focus:outline-none transition appearance-none">
+                        <label class="text-[10px] text-gray-500 uppercase font-black ml-2">Target League</label>
+                        <select x-model="selectedLeagueId" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-blue-400 focus:outline-none transition-all appearance-none cursor-pointer">
                             <option value="">Choose League...</option>
                             <template x-for="l in leagues" :key="l.id">
-                                <option :value="l.id" x-text="l.name + ' S' + l.season_number"></option>
+                                <option :value="l.id" x-text="l.name + ' (S' + l.season_number + ')'"></option>
                             </template>
                         </select>
                     </div>
                     <div class="space-y-2">
-                        <label class="text-[10px] text-gray-500 uppercase font-bold ml-1">User Team</label>
-                        <select x-model="selectedTeamEmail" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-blue-400 focus:outline-none transition appearance-none">
+                        <label class="text-[10px] text-gray-500 uppercase font-black ml-2">Available Team</label>
+                        <select x-model="selectedTeamEmail" class="w-full bg-[#161b26] p-4 rounded-2xl border border-white/10 focus:border-blue-400 focus:outline-none transition-all appearance-none cursor-pointer">
                             <option value="">Choose Team...</option>
                             <template x-for="u in users" :key="u.email">
                                 <option :value="u.email" x-text="u.team_name"></option>
@@ -91,75 +113,74 @@
                     </div>
                 </div>
                 
-                <button @click="assignTeam" class="w-full bg-blue-500 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-500/20 hover:scale-[1.01] active:scale-95 transition mt-2">
-                    CONFIRM ROSTER ASSIGNMENT
+                <button @click="assignTeam" class="btn-primary w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-600/20 hover:shadow-blue-600/40 uppercase tracking-widest text-sm">
+                    Assign to Roster
                 </button>
             </div>
         </div>
 
-        <div class="space-y-12">
-            <h2 class="text-2xl font-black uppercase tracking-widest text-center text-white/30">Active Roster Visualizer</h2>
-            
-            <template x-for="league in leagues" :key="league.id">
-                <div class="bg-white/5 rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
-                    <div class="p-6 bg-white/5 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-[#00ff85] text-black text-[10px] font-black px-2 py-0.5 rounded">S<span x-text="league.season_number"></span></span>
-                                <h3 class="text-2xl font-bold text-white" x-text="league.name"></h3>
+        <div class="space-y-16 pb-20">
+            <template x-for="(league, index) in leagues" :key="league.id">
+                <div class="animate__animated animate__fadeInUp bg-white/5 rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl" :style="'animation-delay: ' + (index * 0.1) + 's'">
+                    
+                    <div class="p-8 bg-white/5 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div class="flex items-center gap-5">
+                            <div class="w-16 h-16 rounded-3xl bg-[#00ff85] flex items-center justify-center text-black font-black text-2xl italic shadow-lg shadow-[#00ff85]/20">
+                                S<span x-text="league.season_number"></span>
                             </div>
-                            <p class="text-sm text-gray-400" x-text="'Prize Pool: ' + league.prize_pool"></p>
+                            <div>
+                                <h3 class="text-3xl font-black text-white uppercase italic" x-text="league.name"></h3>
+                                <div class="flex items-center gap-3 mt-1">
+                                    <span class="text-xs text-[#00ff85] font-bold" x-text="league.prize_pool"></span>
+                                    <span class="w-1 h-1 rounded-full bg-white/20"></span>
+                                    <span class="text-xs text-gray-500 uppercase font-bold" x-text="league.status"></span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-4 text-right">
-                            <div class="text-xs text-gray-500">
-                                <span class="block uppercase font-bold">Status</span>
-                                <span class="text-[#00ff85] font-bold uppercase" x-text="league.status"></span>
-                            </div>
-                            <div class="text-xs text-gray-500">
-                                <span class="block uppercase font-bold">Slots</span>
-                                <span class="text-white font-bold" x-text="getMemberCount(league.id) + ' / ' + league.total_slots"></span>
+                        <div class="flex gap-4">
+                            <div class="bg-black/40 px-6 py-3 rounded-2xl border border-white/5">
+                                <span class="block text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">Roster Filled</span>
+                                <span class="text-xl font-black text-white">
+                                    <span x-text="getMemberCount(league.id)"></span> / <span x-text="league.total_slots"></span>
+                                </span>
                             </div>
                         </div>
                     </div>
 
                     <div class="overflow-x-auto">
                         <table class="w-full">
-                            <thead class="bg-black/20 text-[10px] uppercase tracking-widest text-gray-500">
+                            <thead class="bg-black/30 text-[10px] uppercase tracking-[0.2em] text-gray-500 font-black">
                                 <tr>
-                                    <th class="px-8 py-4 text-left">Team Details</th>
-                                    <th class="px-8 py-4 text-center">Status</th>
-                                    <th class="px-8 py-4 text-right">Action</th>
+                                    <th class="px-10 py-5 text-left">Team Organization</th>
+                                    <th class="px-10 py-5 text-center">Registration</th>
+                                    <th class="px-10 py-5 text-right">Control</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-white/5">
                                 <template x-for="m in members.filter(x => x.league_id === league.id)" :key="m.id">
-                                    <tr class="hover:bg-white/[0.02] transition">
-                                        <td class="px-8 py-4">
-                                            <div class="flex items-center gap-4">
-                                                <img :src="m.team_logo || 'https://via.placeholder.com/40'" class="w-10 h-10 rounded-xl object-cover border border-white/10">
+                                    <tr class="hover:bg-[#00ff85]/[0.03] transition-colors duration-300">
+                                        <td class="px-10 py-6">
+                                            <div class="flex items-center gap-5">
+                                                <div class="relative group">
+                                                    <img :src="m.logo_url || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + m.team_name" 
+                                                         class="w-14 h-14 rounded-2xl object-cover border border-white/10 group-hover:border-[#00ff85] transition-all">
+                                                </div>
                                                 <div>
-                                                    <span class="block font-bold text-white" x-text="m.team_name"></span>
-                                                    <span class="text-[10px] text-gray-500 uppercase" x-text="'Team ID: ' + m.id.split('-')[0]"></span>
+                                                    <span class="block font-black text-lg text-white uppercase italic" x-text="m.team_name"></span>
+                                                    <span class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Verified Participant</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-8 py-4 text-center">
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#00ff85]/10 text-[#00ff85]">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-[#00ff85] animate-pulse"></span>
-                                                CONFIRMED
-                                            </span>
+                                        <td class="px-10 py-6 text-center">
+                                            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00ff85]/10 border border-[#00ff85]/20">
+                                                <span class="w-2 h-2 rounded-full bg-[#00ff85] animate-pulse"></span>
+                                                <span class="text-[10px] font-black text-[#00ff85] uppercase">Active</span>
+                                            </div>
                                         </td>
-                                        <td class="px-8 py-4 text-right">
-                                            <button @click="removeMember(m.id)" class="text-red-500/50 hover:text-red-500 transition">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        <td class="px-10 py-6 text-right">
+                                            <button @click="removeMember(m.id)" class="p-3 text-red-500/30 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all active:scale-90">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                             </button>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <template x-if="getMemberCount(league.id) === 0">
-                                    <tr>
-                                        <td colspan="3" class="px-8 py-12 text-center text-gray-600 italic text-sm">
-                                            No teams assigned to this league yet.
                                         </td>
                                     </tr>
                                 </template>
@@ -172,7 +193,7 @@
     </div>
 
     <script>
-        // REPLACE WITH YOUR ACTUAL ANON KEY
+        // Project Setup
         const _sb = supabase.createClient('https://irzgzyfscoosvixwvfhx.supabase.co', 'sb_publishable_5WjuPG6Wg96_ySp0DcDuTw_JTGWxSJh');
 
         function adminPanel() {
@@ -189,14 +210,22 @@
                 },
 
                 async load() {
-                    const { data: L } = await _sb.from('leagues').select('*').order('created_at', { ascending: false });
-                    const { data: U } = await _sb.from('userinfo').select('email, team_name, logo_url
-                                                                ');
-                    const { data: M } = await _sb.from('league_members').select('*');
-                    
-                    this.leagues = L || [];
-                    this.users = U || [];
-                    this.members = M || [];
+                    try {
+                        // Fetch Leagues
+                        const { data: L } = await _sb.from('leagues').select('*').order('created_at', { ascending: false });
+                        
+                        // Fetch Teams (Mapping logo_url correctly)
+                        const { data: U } = await _sb.from('userinfo').select('email, team_name, logo_url');
+                        
+                        // Fetch Members
+                        const { data: M } = await _sb.from('league_members').select('*');
+                        
+                        this.leagues = L || [];
+                        this.users = U || [];
+                        this.members = M || [];
+                    } catch (e) {
+                        console.error("Sync Failed:", e);
+                    }
                 },
 
                 getMemberCount(leagueId) {
@@ -204,14 +233,14 @@
                 },
 
                 async saveLeague() {
-                    if (!this.form.name) return alert("Please enter a league name");
+                    if (!this.form.name) return alert("League Name is required.");
                     
                     const { error } = await _sb.from('leagues').insert([{
                         name: this.form.name,
                         season_number: this.form.season,
                         total_slots: this.form.slots,
                         prize_pool: this.form.prize,
-                        status: 'Registration'
+                        status: 'Active'
                     }]);
 
                     if (error) {
@@ -219,13 +248,13 @@
                     } else {
                         this.form.name = '';
                         await this.load();
-                        alert("League Initialized Successfully");
+                        alert("Tournament Initialized!");
                     }
                 },
 
                 async assignTeam() {
                     if (!this.selectedLeagueId || !this.selectedTeamEmail) {
-                        return alert("Select both a league and a team.");
+                        return alert("Missing selection.");
                     }
 
                     const team = this.users.find(u => u.email === this.selectedTeamEmail);
@@ -233,20 +262,19 @@
                     const { error } = await _sb.from('league_members').insert([{
                         league_id: this.selectedLeagueId,
                         team_name: team.team_name,
-                        logo_url: team.logo_url
+                        logo_url: team.logo_url // Corrected mapping
                     }]);
 
                     if (error) {
-                        alert("Error: " + error.message);
+                        alert(error.message);
                     } else {
                         await this.load();
-                        alert(`${team.team_name} has been added to the roster.`);
+                        alert("Team Roster Updated!");
                     }
                 },
 
                 async removeMember(memberId) {
-                    if (!confirm("Remove this team from the league?")) return;
-                    
+                    if (!confirm("Remove team from roster?")) return;
                     const { error } = await _sb.from('league_members').delete().eq('id', memberId);
                     if (!error) await this.load();
                 }
