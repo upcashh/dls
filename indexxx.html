@@ -477,10 +477,28 @@
                     if (data) this.fixtures = data;
                 },
 
-                calculateTactics() {
-                    let gs = 0, ga = 0, form = [];
-                    let bestDiff = -999, worstDiff = 999;
-                    let bwStr = "0-0", blStr = "0-0";
+                this.results.forEach(r => {
+    // We convert everything to lowercase and remove spaces to ensure a match
+    let myTeam = (this.userTeam || "").trim().toLowerCase();
+    let home = (r.home_name || "").trim().toLowerCase();
+    let away = (r.away_name || "").trim().toLowerCase();
+
+    let isHome = home === myTeam;
+    let isAway = away === myTeam;
+
+    if (isHome || isAway) {
+        let my = isHome ? r.h_score : r.a_score;
+        let op = isHome ? r.a_score : r.h_score;
+        let diff = my - op;
+
+        gs += my; ga += op;
+
+        if (diff > bestDiff) { bestDiff = diff; bwStr = `${my}-${op}`; }
+        if (diff < worstDiff) { worstDiff = diff; blStr = `${my}-${op}`; }
+
+        if (form.length < 5) form.push(my > op ? 'W' : my === op ? 'D' : 'L');
+    }
+});
 
                     this.results.forEach(r => {
                         let isHome = (r.home_name || "").trim() === (this.userTeam || "").trim();
