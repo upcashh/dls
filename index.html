@@ -483,8 +483,9 @@
                     let bwStr = "0-0", blStr = "0-0";
 
                     this.results.forEach(r => {
-                        let isHome = r.home_name === this.userTeam;
-                        let isAway = r.away_name === this.userTeam;
+                        let isHome = (r.home_name || "").trim() === (this.userTeam || "").trim();
+let isAway = (r.away_name || "").trim() === (this.userTeam || "").trim();
+
 
                         if (isHome || isAway) {
                             let my = isHome ? r.h_score : r.a_score;
