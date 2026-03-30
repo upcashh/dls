@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0f1a">
+    <title>DLS26 | Command Center Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { background-color: #0a0f1a; font-family: 'DM Sans', sans-serif; color: white; overflow-x: hidden; }
+        .outfit { font-family: 'Outfit', sans-serif; }
+        
+        .glass-card { 
+            background: linear-gradient(160deg, #111827 0%, #0d1321 100%); 
+            border: 1px solid rgba(0, 255, 133, 0.1);
+        }
+
+        /* Navigation Animations */
+        .nav-active { 
+            color: #00ff85 !important; 
+            transform: translateY(-4px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .nav-active svg { filter: drop-shadow(0 0 8px #00ff85); }
+
+        /* DLS Form Boxes */
+        .form-box { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; }
+        .form-box-lg { width: 28px; height: 28px; font-size: 14px; }
+        .form-w { background: #00ff85; color: #0a0f1a; }
+        .form-d { background: #ffcc00; color: #0a0f1a; }
+        .form-l { background: #ff4d4d; color: white; }
+
+        /* Skeleton Shimmer */
+        .skeleton {
+            background: linear-gradient(90deg, #111827 25%, #1f2937 50%, #111827 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Scroll Animation */
+        .fade-in-scroll { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        [x-cloak] { display: none !important; }
+        .logo-circle-md { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+        .col-stat { width: 22px; text-align: center; }
+    </style>
+</head>
+<body x-data="leagueApp()" x-init="init()" class="pb-20">
+
+    <header class="bg-[#0a0f1a] border-b border-[#00ff8526] sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="leading-none">
+                    <span class="outfit text-white text-xl font-900 tracking-tighter uppercase">DLS<span class="text-[#00ff85]">26</span></span>
+                    <span class="block text-[7px] tracking-[0.4em] font-bold text-[#00ff85] opacity-80 uppercase">Network Command</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <div class="h-2 w-2 rounded-full bg-[#00ff85] animate-pulse"></div>
+                <span class="text-[9px] font-black text-white/40 uppercase tracking-widest">System Live</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4 pt-4">
+
+        <template x-if="loading">
+            <div class="space-y-4">
+                <div class="h-40 skeleton rounded-3xl"></div>
+                <div class="h-64 skeleton rounded-3xl"></div>
+            </div>
+        </template>
+
+        <div x-show="!loading" class="fade-in-scroll">
+            
+            <div x-show="view === 'home'" x-cloak>
+                <div class="glass-card rounded-2xl overflow-hidden border border-[#00ff8520]">
+                    <table class="w-full text-left table-fixed">
+                        <thead class="bg-black/40 border-b border-white/5 text-white/30 font-bold text-[8px] uppercase">
+                            <tr>
+                                <th class="py-4 pl-3 w-8">#</th>
+                                <th class="py-4">Club</th>
+                                <th class="py-4 col-stat">MP</th>
+                                <th class="py-4 col-stat">GD</th>
+                                <th class="py-4 col-pts text-[#00ff85]">PTS</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5 text-[11px]">
+                            <template x-for="(team, index) in standings" :key="index">
+                                <tr :class="team.name === userTeam ? 'bg-[#00ff8515] border-l-4 border-l-[#00ff85]' : ''">
+                                    <td class="py-4 pl-3 font-black text-white/20" x-text="index + 1"></td>
+                                    <td class="py-4 flex items-center space-x-3">
+                                        <img :src="team.logo" class="logo-circle-md border border-white/10">
+                                        <span class="font-bold uppercase truncate" :class="team.name === userTeam ? 'text-[#00ff85]' : ''" x-text="team.name"></span>
+                                    </td>
+                                    <td class="text-center text-white/40" x-text="team.played"></td>
+                                    <td class="text-center font-bold" :class="team.gd >= 0 ? 'text-white/60' : 'text-red-400'" x-text="team.gd"></td>
+                                    <td class="text-center font-black text-[#00ff85]" x-text="team.points"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div x-show="view === 'fixtures'" x-cloak>
+                <div class="flex space-x-2 overflow-x-auto no-scrollbar mb-6 py-2">
+                    <template x-for="n in totalMatchdays">
+                        <button @click="currentMatchday = n; fetchFixtures()" 
+                                :class="currentMatchday === n ? 'active-md' : 'bg-white/5 text-white/40'"
+                                class="px-5 py-2.5 rounded-xl text-[10px] font-black transition-all flex-shrink-0" x-text="'MD ' + n"></button>
+                    </template>
+                </div>
+                <div class="space-y-3">
+                    <template x-for="match in fixtures" :key="match.id">
+                        <div class="glass-card p-4 rounded-2xl flex items-center justify-between border-l-2 border-[#00ff85]">
+                            <div class="flex flex-col items-center w-1/3 space-y-1">
+                                <img :src="match.home_logo" class="logo-circle-md">
+                                <span class="text-[9px] font-bold uppercase truncate w-full text-center" x-text="match.home_team"></span>
+                            </div>
+                            <div class="text-center px-4">
+                                <span class="text-[10px] font-black text-[#00ff85] tracking-widest uppercase" x-text="match.match_date"></span>
+                            </div>
+                            <div class="flex flex-col items-center w-1/3 space-y-1">
+                                <img :src="match.away_logo" class="logo-circle-md">
+                                <span class="text-[9px] font-bold uppercase truncate w-full text-center" x-text="match.away_team"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div x-show="view === 'results'" x-cloak>
+                <div class="space-y-3">
+                    <template x-for="res in results" :key="res.id">
+                        <div class="glass-card p-4 rounded-xl flex items-center justify-between">
+                            <div class="flex items-center space-x-3 w-1/3">
+                                <img :src="res.home_logo" class="logo-circle-md">
+                                <span class="text-[9px] font-bold uppercase truncate" x-text="res.home_name"></span>
+                            </div>
+                            <div class="flex items-center space-x-2 bg-black/40 px-3 py-1 rounded-lg border border-white/5">
+                                <span class="text-[#00ff85] font-black text-sm" x-text="res.h_score"></span>
+                                <span class="text-white/20">-</span>
+                                <span class="text-[#00ff85] font-black text-sm" x-text="res.a_score"></span>
+                            </div>
+                            <div class="flex items-center space-x-3 w-1/3 justify-end">
+                                <span class="text-[9px] font-bold uppercase truncate text-right" x-text="res.away_name"></span>
+                                <img :src="res.away_logo" class="logo-circle-md">
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div x-show="view === 'insights'" x-cloak>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="glass-card p-4 rounded-2xl">
+                        <p class="text-[9px] uppercase font-black text-white/30">Total Goals Scored</p>
+                        <p class="text-2xl font-black text-[#00ff85]" x-text="stats.totalGS"></p>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl">
+                        <p class="text-[9px] uppercase font-black text-white/30">Goals Conceded</p>
+                        <p class="text-2xl font-black text-red-500" x-text="stats.totalGA"></p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div class="glass-card p-5 rounded-3xl relative overflow-hidden">
+                        <div class="absolute right-0 top-0 h-full w-24 bg-[#00ff8508] skew-x-[-20deg] transform translate-x-12"></div>
+                        <h4 class="outfit font-900 text-xs uppercase text-[#00ff85] mb-4">Elite Performances</h4>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-[10px] uppercase text-white/40">Biggest Win</p>
+                                <p class="text-lg font-black" x-text="stats.biggestWin"></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] uppercase text-white/40">Best Position</p>
+                                <p class="text-lg font-black text-[#00ff85]" x-text="stats.bestPos"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="view === 'profile'" x-cloak>
+                <div class="glass-card rounded-3xl p-6 mb-6">
+                    <div class="flex items-center space-x-6 mb-8">
+                        <div class="relative">
+                            <img :src="userProfile.logo" class="w-20 h-20 rounded-full border-2 border-[#00ff85] p-1">
+                            <div class="absolute -bottom-1 -right-1 bg-[#00ff85] p-1.5 rounded-full text-[#0a0f1a]">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+                            </div>
+                        </div>
+                        <div>
+                            <h2 class="outfit font-900 text-2xl uppercase text-[#00ff85]" x-text="userTeam"></h2>
+                            <p class="text-[10px] text-white/40 font-bold uppercase tracking-[0.2em]" x-text="userProfile.email"></p>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <p class="text-[9px] uppercase font-black text-white/30 mb-3 tracking-widest">Recent Form</p>
+                        <div class="flex items-end space-x-1.5">
+                            <template x-for="(f, i) in userForm" :key="i">
+                                <div class="form-box" :class="[f === 'W' ? 'form-w' : f === 'D' ? 'form-d' : 'form-l', i === 4 ? 'form-box-lg' : '']" x-text="f"></div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <p class="text-[9px] uppercase font-black text-white/30 mb-3 tracking-widest">Protocol Participation</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <template x-for="lg in userLeagues">
+                            <div class="glass-card p-3 rounded-2xl border border-white/5">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-[8px] px-2 py-0.5 rounded-full font-black uppercase" :class="lg.status === 'active' ? 'bg-[#00ff8520] text-[#00ff85]' : 'bg-white/10 text-white/40'" x-text="lg.status"></span>
+                                    <span class="text-[10px] font-black text-[#00ff85]">#<span x-text="lg.rank"></span></span>
+                                </div>
+                                <p class="text-[10px] font-black uppercase truncate" x-text="lg.name"></p>
+                                <p class="text-[8px] text-white/30 uppercase mt-1"><span x-text="lg.teams"></span> Competitors</p>
+                            </div>
+                        </template>
+                    </div>
+
+                    <button @click="confirmLogout()" class="w-full mt-8 py-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl outfit font-900 uppercase text-xs tracking-widest flex items-center justify-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        <span>Terminate Session</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#0a0f1a]/90 backdrop-blur-xl border-t border-white/5 flex justify-around items-center h-16 z-50 px-2">
+        <button @click="view = 'home'" :class="view === 'home' ? 'nav-active' : ''" class="flex flex-col items-center text-white/30 transition-all w-1/5">
+            <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            <span class="text-[7px] font-black uppercase tracking-tighter">Standings</span>
+        </button>
+        <button @click="view = 'fixtures'; fetchFixtures()" :class="view === 'fixtures' ? 'nav-active' : ''" class="flex flex-col items-center text-white/30 transition-all w-1/5">
+            <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span class="text-[7px] font-black uppercase tracking-tighter">Fixtures</span>
+        </button>
+        <button @click="view = 'results'" :class="view === 'results' ? 'nav-active' : ''" class="flex flex-col items-center text-white/30 transition-all w-1/5">
+            <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[7px] font-black uppercase tracking-tighter">Results</span>
+        </button>
+        <button @click="view = 'insights'" :class="view === 'insights' ? 'nav-active' : ''" class="flex flex-col items-center text-white/30 transition-all w-1/5">
+            <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            <span class="text-[7px] font-black uppercase tracking-tighter">Insights</span>
+        </button>
+        <button @click="view = 'profile'" :class="view === 'profile' ? 'nav-active' : ''" class="flex flex-col items-center text-white/30 transition-all w-1/5">
+            <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            <span class="text-[7px] font-black uppercase tracking-tighter">Profile</span>
+        </button>
+    </nav>
+
+    <script>
+        const _supabase = supabase.createClient('https://irzgzyfscoosvixwvfhx.supabase.co', 'sb_publishable_5WjuPG6Wg96_ySp0DcDuTw_JTGWxSJh');
+
+        function leagueApp() {
+            return {
+                view: 'home',
+                loading: true,
+                userTeam: '',
+                standings: [],
+                fixtures: [],
+                results: [],
+                totalMatchdays: 0,
+                currentMatchday: 1,
+                isAdmin: false,
+                userProfile: { logo: '', email: '', phone: 'N/A' },
+                userForm: ['W', 'W', 'D', 'L', 'W'], // Default DLS Form
+                userLeagues: [],
+                stats: { totalGS: 0, totalGA: 0, biggestWin: '0-0', bestPos: '1st' },
+
+                async init() {
+                    const { data: { user } } = await _supabase.auth.getUser();
+                    if (!user) { window.location.href = 'signin.html'; return; }
+                    this.userProfile.email = user.email;
+
+                    // Fetch user specific team
+                    const { data: userData } = await _supabase.from('standings').select('*').eq('user_id', user.id).maybeSingle();
+                    if (userData) {
+                        this.userTeam = userData.team_name;
+                        this.userProfile.logo = userData.logo_url;
+                    }
+
+                    // Load standings
+                    const { data: standData } = await _supabase.from('standings').select('*').order('points', { ascending: false });
+                    if (standData) this.standings = standData.map(i => ({ 
+                        name: i.team_name, logo: i.logo_url, played: i.played, gd: i.gd, points: i.points 
+                    }));
+
+                    // Load Results and Calc Insights
+                    const { data: resData } = await _supabase.from('results').select('*').order('created_at', { ascending: false });
+                    if (resData) {
+                        this.results = resData;
+                        this.calculateInsights(resData);
+                    }
+
+                    // Leagues Participated
+                    this.userLeagues = [
+                        { name: 'Premier League', status: 'active', rank: 1, teams: 20 },
+                        { name: 'Champions Cup', status: 'completed', rank: 4, teams: 16 }
+                    ];
+
+                    this.loading = false;
+                },
+
+                calculateInsights(results) {
+                    let gs = 0, ga = 0, maxDiff = 0, bWin = 'N/A';
+                    results.forEach(r => {
+                        if (r.home_name === this.userTeam) {
+                            gs += r.h_score; ga += r.a_score;
+                            if (r.h_score - r.a_score > maxDiff) {
+                                maxDiff = r.h_score - r.a_score;
+                                bWin = `${r.h_score}-${r.a_score} vs ${r.away_name}`;
+                            }
+                        } else if (r.away_name === this.userTeam) {
+                            gs += r.a_score; ga += r.h_score;
+                            if (r.a_score - r.h_score > maxDiff) {
+                                maxDiff = r.a_score - r.h_score;
+                                bWin = `${r.a_score}-${r.h_score} vs ${r.home_name}`;
+                            }
+                        }
+                    });
+                    this.stats.totalGS = gs;
+                    this.stats.totalGA = ga;
+                    this.stats.biggestWin = bWin;
+                },
+
+                async fetchFixtures() {
+                    const { data } = await _supabase.from('fixtures').select('*').eq('matchday', this.currentMatchday);
+                    if (data) this.fixtures = data;
+                },
+
+                confirmLogout() {
+                    if(confirm("Are you sure you want to terminate the secure session?")) {
+                        _supabase.auth.signOut().then(() => window.location.href = 'signin.html');
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
