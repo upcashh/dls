@@ -221,7 +221,8 @@
             <div x-show="view === 'profile'" class="fade-in-scroll">
                 <div class="glass-card rounded-3xl p-8 mb-6 text-center">
                     <div class="relative inline-block mb-4">
-                        <img :src="profile.team_logo || 'https://via.placeholder.com/100'" class="w-24 h-24 rounded-full border-2 border-[#00ff85] p-1 object-cover">
+                        <img :src="profile.team_logo ? profile.team_logo : 'https://api.dicebear.com/7.x/identicon/svg?seed=' + profile.team_name" class="w-24 h-24 rounded-full border-2 border-[#00ff85] p-1 object-cover">
+
                         <label class="absolute bottom-0 right-0 bg-[#00ff85] p-2 rounded-full text-[#0a0f1a] cursor-pointer">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z"/></svg>
                             <input type="file" @change="uploadLogo" class="hidden">
@@ -468,17 +469,29 @@
                     }).eq('team_name', tName);
                 },
 
-                async uploadLogo(e) {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    const name = `${Date.now()}_logo`;
-                    const { data } = await _supabase.storage.from('logos').upload(name, file);
-                    if (data) {
-                        const url = `https://irzgzyfscoosvixwvfhx.supabase.co/storage/v1/object/public/logos/${name}`;
-                        await _supabase.from('userinfo').update({ team_logo: url }).eq('email', this.profile.email);
-                        this.profile.team_logo = url;
-                    }
-                },
+                async uploadlogo(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const fileName = `logo_${Date.now()}.png`;
+    
+    // 1. Upload to storage
+    const { data, error } = await _supabase.storage.from('logos').upload(fileName, file);
+
+    if (data) {
+        // 2. Get the official public URL directly from Supabase
+        const { data: { publicUrl } } = _supabase.storage.from('logos').getPublicUrl(fileName);
+        
+        // 3. Update the database and local state
+        await _supabase.from('userinfo').update({ team_logo: publicUrl }).eq('email', this.profile.email);
+        this.profile.team_logo = publicUrl;
+        
+        alert("Logo Updated Successfully!");
+    } else {
+        alert("Upload failed: " + error.message);
+    }
+}
+
 
                 initScroll() {
                     const obs = new IntersectionObserver((es) => {
