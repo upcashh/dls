@@ -219,17 +219,30 @@
                         <p class="text-[9px] uppercase font-black text-white/30 tracking-widest">Team Form Spectrum</p>
                         <span class="text-[8px] bg-[#00ff851a] text-[#00ff85] px-2 py-0.5 rounded font-bold uppercase">Last 5</span>
                     </div>
-                    <div class="flex space-x-2">
-                        <template x-for="(f, i) in userForm" :key="i">
-    <div :class="{
-        'bg-[#00ff85]': f === 'W',
-        'bg-yellow-500': f === 'D',
-        'bg-red-500': f === 'L'
-    }" class="w-8 h-8 rounded-lg flex items-center justify-center font-black text-[#0a0f1a] text-[10px] shadow-lg shadow-black/20" x-text="f"></div>
-</template>
+                    <div class="flex items-center space-x-1.5 pb-2">
+    <template x-for="(f, i) in userForm" :key="i">
+        <div class="flex flex-col items-center">
+            <div :class="{
+                'bg-[#00ff85]': f === 'W',
+                'bg-[#ffcc00]': f === 'D',
+                'bg-[#ff4d4d]': f === 'L',
+                'opacity-40': i < userForm.length - 1
+            }" 
+            class="w-8 h-8 flex items-center justify-center font-black text-[#0a0f1a] text-[11px] transition-all shadow-sm" 
+            x-text="f"></div>
 
-                    </div>
-                </div>
+            <template x-if="i === userForm.length - 1">
+                <div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px]"
+                     :class="{
+                        'border-t-[#00ff85]': f === 'W',
+                        'border-t-[#ffcc00]': f === 'D',
+                        'border-t-[#ff4d4d]': f === 'L'
+                     }"></div>
+            </template>
+        </div>
+    </template>
+</div>
+
 
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div class="glass-card p-5 rounded-3xl border-l-4 border-[#00ff85]">
@@ -494,7 +507,6 @@
     // We use [...form] to create a fresh array so Alpine definitely sees the change
     this.userForm = [...form].reverse();
 
-                    this.userForm = form.reverse();
                 },
 
                 async submitAdminResult() {
